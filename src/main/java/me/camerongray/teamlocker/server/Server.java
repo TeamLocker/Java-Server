@@ -4,6 +4,12 @@
  * and open the template in the editor.
  */
 package me.camerongray.teamlocker.server;
+import com.mchange.v2.c3p0.ComboPooledDataSource;
+import java.beans.PropertyVetoException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
 import static spark.Spark.*;
 
 /**
@@ -12,8 +18,10 @@ import static spark.Spark.*;
  */
 public class Server {
     private String value = "foo";
-    public static void main(String[] args) {
+    public static void main(String[] args) throws PropertyVetoException, SQLException {
+        ConnectionManager.initialise("localhost", "teamlocker", "teamlocker", "teamlocker");
         TransactionStore.initialise();
+        
         
         before((request, response) -> {
            // Check authentication here
@@ -26,15 +34,37 @@ public class Server {
                     "numbers", Response.arrayOf(1,2,3)));
         });
         
-        get("/new/", (request, response) -> {
-            Transaction transaction = TransactionStore.getTransaction();
-            return Response.build(response, Response.objectOf("id", transaction.getId()));
+        get("/start/", (request, response) -> {
+            Transaction t = TransactionStore.getTransaction();
+            return t.getId(); 
         });
         
-        get("/existing/", (request, response) -> {
-            System.out.println(request.queryParams("id"));
-            Transaction transaction = TransactionStore.getTransaction(request.queryParams("id"));
-            return Response.build(response, Response.objectOf("accesses", transaction.access()));
+        get("/insert/", (request, response) -> {
+            Transaction t = TransactionStore.getTransaction(request.queryParams("id"));
+            PreparedStatement stmt = t.getConnection().prepareStatement("INSERT INTO test (value) VALUES (?)");
+            stmt.setString(1, request.queryParams("id"));
+            stmt.execute();
+            return ""; 
+        });
+        
+        get("/commit/", (request, response) -> {
+            Transaction t = TransactionStore.getTransaction(request.queryParams("id"));
+            t.commit();
+            return ""; 
+        });
+        
+        get("/rollback/", (request, response) -> {
+            Transaction t = TransactionStore.getTransaction(request.queryParams("id"));
+            t.rollback();
+            return ""; 
+        });
+        
+        get("/new/", (request, response) -> {
+            Connection conn = ConnectionManager.getNewConnection();
+            Statement stmt = conn.createStatement();
+            stmt.execute("INSERT INTO test (value) VALUES ('new');");
+            conn.close();
+            return ""; 
         });
         
         //TODO - Disable this in production!

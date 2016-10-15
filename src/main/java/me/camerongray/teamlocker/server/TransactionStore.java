@@ -5,6 +5,7 @@
  */
 package me.camerongray.teamlocker.server;
 
+import java.sql.SQLException;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -22,7 +23,7 @@ public class TransactionStore {
         instance = new TransactionStore();
     }
     
-    public static Transaction getTransaction() {
+    public static Transaction getTransaction() throws SQLException {
         Transaction transaction = new Transaction();
         instance.transactionMap.put(transaction.getId(), transaction);
         return transaction;

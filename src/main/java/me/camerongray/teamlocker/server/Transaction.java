@@ -5,6 +5,9 @@
  */
 package me.camerongray.teamlocker.server;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.UUID;
 
 /**
@@ -13,18 +16,29 @@ import java.util.UUID;
  */
 public class Transaction {
     private String id;
-    private int accesses = 0;
+    private Connection connection;
 
-    public Transaction() {
+    public Transaction() throws SQLException {
         this.id = UUID.randomUUID().toString();
+        this.connection = ConnectionManager.getNewConnection();
+        this.connection.createStatement().execute("START TRANSACTION");
+    }
+
+    public Connection getConnection() {
+        return connection;
+    }
+    
+    public void commit() throws SQLException {
+        this.connection.createStatement().execute("COMMIT");
+        this.connection.close();
+    }
+    
+    public void rollback() throws SQLException {
+        this.connection.createStatement().execute("ROLLBACK");
+        this.connection.close();
     }
 
     public String getId() {
         return id;
-    }
-    
-    public int access() {
-        accesses++;
-        return accesses;
     }
 }
