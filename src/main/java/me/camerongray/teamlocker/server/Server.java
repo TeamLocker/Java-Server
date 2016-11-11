@@ -11,6 +11,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.apache.commons.beanutils.DynaBean;
 import static spark.Spark.*;
 
 /**
@@ -32,37 +35,41 @@ public class Server {
         });
         
         get("/check_auth/", (request, response) -> {
-            return Response.build(response, Response.objectOf("success", true));
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf("success", true));
         });
-        
+                
         get("/users/:userId/", (request, response) -> {
-            Database database = new Database(ConnectionManager.getPooledConnection());
-            
-            ResultSet rs = null;
-            if (request.params(":userId").equals("self")) {
-                rs = database.getUser((new RequestCredentials(request)).getUsername());
-            } else {
-                Helpers.enforceAdmin(request);
-                try {
-                    rs = database.getUser(Integer.parseInt(request.params(":userId")));
-                } catch (NumberFormatException e) {
-                    halt(400, "User ID must be a number");
+            DynaBean user = null;
+            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+                if (request.params(":userId").equals("self")) {
+                    try {
+                        user = database.getUser((new RequestCredentials(request)).getUsername());
+                    } catch (ObjectNotFoundException e) {
+                        ResponseBuilder.errorHalt(response, 404, "User not found");
+                    }
+                } else {
+                    Helpers.enforceAdmin(request, response);
+                    try {
+                        user = database.getUser(Integer.parseInt(request.params(":userId")));
+                    } catch (NumberFormatException e) {
+                        ResponseBuilder.errorHalt(response, 400, "User ID must be a number");
+                    } catch (ObjectNotFoundException e) {
+                        ResponseBuilder.errorHalt(response, 404, "User not found");
+                    }
                 }
             }
             
-            if (!rs.next()) halt(404, "User not found");
-            
-            return Response.build(response, Response.objectOf(
-                    "id", rs.getInt("id"),
-                    "full_name", rs.getString("full_name"),
-                    "username", rs.getString("username"),
-                    "email", rs.getString("email"),
-                    "auth_hash", rs.getString("auth_hash"),
-                    "encrypted_private_key", rs.getString("encrypted_private_key"),
-                    "public_key", rs.getString("public_key"),
-                    "admin", rs.getBoolean("admin"),
-                    "pbkdf2_salt", rs.getString("pbkdf2_salt"),
-                    "aes_iv", rs.getString("aes_iv")
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf(
+                    "id", (int)user.get("id"),
+                    "full_name",(String)user.get("full_name"),
+                    "username",(String)user.get("username"),
+                    "email",(String)user.get("email"),
+                    "auth_hash",(String)user.get("auth_hash"),
+                    "encrypted_private_key",(String)user.get("encrypted_private_key"),
+                    "public_key",(String)user.get("public_key"),
+                    "admin", (boolean)user.get("admin"),
+                    "pbkdf2_salt",(String)user.get("pbkdf2_salt"),
+                    "aes_iv",(String)user.get("aes_iv")
             ));
         });
         

@@ -5,12 +5,14 @@
  */
 package me.camerongray.teamlocker.server;
 import org.json.*;
+import static spark.Spark.halt;
+import static spark.Spark.halt;
 
 /**
  *
  * @author camerong
  */
-public class Response {
+public class ResponseBuilder {
     public static String build(spark.Response response, Object object) {
         response.type("application/json");
         return object.toString();
@@ -38,5 +40,9 @@ public class Response {
             array.put(parameter);
         }
         return array;
+    }
+    
+    public static void errorHalt(spark.Response response, int statusCode, String message) {
+        halt(statusCode, ResponseBuilder.build(response, ResponseBuilder.objectOf("message", message)));
     }
 }
