@@ -42,6 +42,12 @@ public class Database implements AutoCloseable {
         return this.objectFromRS(rs);
     }
     
+    public List<DynaBean> getAllUsers() throws SQLException {
+        this.stmt = this.connection.prepareStatement("SELECT * FROM users");
+        this.rs = stmt.executeQuery();
+        return this.listFromRS(rs);
+    }
+    
     private List<DynaBean> listFromRS(ResultSet rs) throws SQLException {
         return new RowSetDynaClass(rs).getRows();
     }

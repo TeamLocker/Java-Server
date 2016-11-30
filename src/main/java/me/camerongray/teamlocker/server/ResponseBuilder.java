@@ -4,6 +4,7 @@
  * and open the template in the editor.
  */
 package me.camerongray.teamlocker.server;
+import java.util.ArrayList;
 import org.json.*;
 import static spark.Spark.halt;
 import static spark.Spark.halt;
@@ -37,6 +38,14 @@ public class ResponseBuilder {
     public static JSONArray arrayOf(Object... parameters) {
         JSONArray array = new JSONArray();
         for (Object parameter : parameters) {
+            array.put(parameter);
+        }
+        return array;
+    }
+    
+    public static JSONArray arrayOf(ArrayList<Object> items) {
+        JSONArray array = new JSONArray();
+        for (Object parameter : items) {
             array.put(parameter);
         }
         return array;

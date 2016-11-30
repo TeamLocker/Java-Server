@@ -11,9 +11,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.beanutils.DynaBean;
+import org.json.JSONObject;
 import static spark.Spark.*;
 
 /**
@@ -71,6 +74,30 @@ public class Server {
                     "pbkdf2_salt",(String)user.get("pbkdf2_salt"),
                     "aes_iv",(String)user.get("aes_iv")
             ));
+        });
+        
+        get("/users/", (request, response) -> {
+            ArrayList<JSONObject> userObjects = new ArrayList<>();
+            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+                List<DynaBean> users = database.getAllUsers();
+                
+                for (DynaBean user : users) {
+                    userObjects.add(ResponseBuilder.objectOf(
+                        "id", (int)user.get("id"),
+                        "full_name",(String)user.get("full_name"),
+                        "username",(String)user.get("username"),
+                        "email",(String)user.get("email"),
+                        "auth_hash",(String)user.get("auth_hash"),
+                        "encrypted_private_key",(String)user.get("encrypted_private_key"),
+                        "public_key",(String)user.get("public_key"),
+                        "admin", (boolean)user.get("admin"),
+                        "pbkdf2_salt",(String)user.get("pbkdf2_salt"),
+                        "aes_iv",(String)user.get("aes_iv")
+                    ));
+                }
+            }
+            
+            return ResponseBuilder.build(response, ResponseBuilder.arrayOf(userObjects));
         });
         
         put("/folders/", (request, response) -> {
