@@ -35,6 +35,9 @@ public class Server {
                 halt(401);
             }
             RequestCredentials credentials = new RequestCredentials(request);
+            if (!Auth.checkCredentials(credentials.username, credentials.password)) {
+                ResponseBuilder.errorHalt(response, 401, "Incorrect username/password");
+            }
         });
         
         get("/check_auth/", (request, response) -> {
@@ -51,7 +54,7 @@ public class Server {
                         ResponseBuilder.errorHalt(response, 404, "User not found");
                     }
                 } else {
-                    Helpers.enforceAdmin(request, response);
+                    Auth.enforceAdmin(request, response);
                     try {
                         user = database.getUser(Integer.parseInt(request.params(":userId")));
                     } catch (NumberFormatException e) {
@@ -77,6 +80,7 @@ public class Server {
         });
         
         get("/users/", (request, response) -> {
+            Auth.enforceAdmin(request, response);
             ArrayList<JSONObject> userObjects = new ArrayList<>();
             try (Database database = new Database(ConnectionManager.getPooledConnection())) {
                 List<DynaBean> users = database.getAllUsers();
