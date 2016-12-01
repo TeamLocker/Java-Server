@@ -30,20 +30,40 @@ public class Database implements AutoCloseable {
     
     public DynaBean getUser(String username) throws SQLException, ObjectNotFoundException {
         this.stmt = this.connection.prepareStatement("SELECT * FROM users WHERE username=?");
-        stmt.setString(1, username);
+        this.stmt.setString(1, username);
         this.rs = stmt.executeQuery();
         return this.objectFromRS(rs);
     }
     
     public DynaBean getUser(int userId) throws SQLException, ObjectNotFoundException {
         this.stmt = this.connection.prepareStatement("SELECT * FROM users WHERE id=?");
-        stmt.setInt(1, userId);
+        this.stmt.setInt(1, userId);
         this.rs = stmt.executeQuery();
         return this.objectFromRS(rs);
     }
     
     public List<DynaBean> getAllUsers() throws SQLException {
         this.stmt = this.connection.prepareStatement("SELECT * FROM users");
+        this.rs = stmt.executeQuery();
+        return this.listFromRS(rs);
+    }
+
+    public List<DynaBean> getFolders(int userId) throws SQLException, ObjectNotFoundException {
+        boolean isAdmin = (boolean)this.getUser(userId).get("admin");
+        
+        if (isAdmin) {
+            this.stmt = this.connection.prepareStatement(""
+                    + "SELECT id, name, true as read, true as write FROM folders");
+        } else {
+            this.stmt = this.connection.prepareStatement(""
+                    + "SELECT f.id, f.name, p.read, p.write "
+                    + "FROM folders as f, users as u, permissions as p "
+                    + "WHERE p.user_id=u.id "
+                        + "AND p.folder_id=f.id "
+                        + "AND u.id=?");
+            this.stmt.setInt(1, userId);
+        }
+        
         this.rs = stmt.executeQuery();
         return this.listFromRS(rs);
     }

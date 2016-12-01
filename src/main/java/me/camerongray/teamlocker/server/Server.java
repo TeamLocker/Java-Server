@@ -101,12 +101,23 @@ public class Server {
                 }
             }
             
-            return ResponseBuilder.build(response, ResponseBuilder.arrayOf(userObjects));
+            return ResponseBuilder.build(response, ResponseBuilder.fromArrayList(userObjects));
         });
         
-        put("/folders/", (request, response) -> {
-            
-            return "";
+        get("/folders/", (request, response) -> {
+            ArrayList<JSONObject> folderObjects = new ArrayList<>();
+            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+                List<DynaBean> folders = database.getFolders((int)Auth.getCurrentUser(request).get("id"));
+                for (DynaBean folder : folders) {
+                    folderObjects.add(ResponseBuilder.objectOf(
+                        "id", (int)folder.get("id"),
+                        "name", (String)folder.get("name"),
+                        "read", (boolean)folder.get("read"),
+                        "write", (boolean)folder.get("write")
+                    ));
+                }
+            }
+            return ResponseBuilder.build(response, ResponseBuilder.fromArrayList(folderObjects));
         });
         
         //TODO - Disable this in production!

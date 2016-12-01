@@ -43,7 +43,7 @@ public class ResponseBuilder {
         return array;
     }
     
-    public static JSONArray arrayOf(ArrayList<Object> items) {
+    public static JSONArray fromArrayList(ArrayList<JSONObject> items) {
         JSONArray array = new JSONArray();
         for (Object parameter : items) {
             array.put(parameter);
