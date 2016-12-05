@@ -15,4 +15,7 @@ public class JSONValidationException extends Exception {
         super(message);
     }
     
+    JSONValidationException(Exception ex) {
+        super(ex);
+    }
 }

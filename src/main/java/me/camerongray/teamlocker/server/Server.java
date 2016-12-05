@@ -120,6 +120,18 @@ public class Server {
             return ResponseBuilder.build(response, ResponseBuilder.fromArrayList(folderObjects));
         });
         
+        get("/validate/", (request, response) -> {
+            try {
+                RequestJson.validateSchema(
+                        "{\"type\": \"object\",\"properties\": {\"firstName\": {\"type\": \"string\"},\"lastName\": {\"type\": \"string\"}},\"required\": [\"firstName\"]}",
+                        "{\"firstName\":\"foo\", \"lastName\":\"bar\"}");
+            } catch (JSONValidationException ex) {
+                return (ex.getMessage());
+            }
+            
+            return "Great success!";
+        });
+        
         //TODO - Disable this in production!
         spark.debug.DebugScreen.enableDebugScreen();
     }

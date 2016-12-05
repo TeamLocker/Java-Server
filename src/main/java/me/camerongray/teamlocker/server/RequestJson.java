@@ -23,21 +23,22 @@ import spark.Request;
  */
 public class RequestJson {
     public static void validateSchema(String validateAgainst, String toValidate) throws JSONValidationException {
-//        ObjectMapper mapper = new ObjectMapper();
-//        try {
-//            JsonNode schemaNode = mapper.readTree(validateAgainst);
-//            JsonNode inputNode = mapper.readTree(toValidate);
-//            JsonSchemaFactory factory = JsonSchemaFactory.byDefault();
-//            JsonSchema schema = factory.getJsonSchema(schemaNode);
-//            ProcessingReport result = schema.validate(inputNode);
-//        } catch (IOException ex) {
-//            
-//        } catch (ProcessingException ex) {
-//            
-//        }
-//        if (!result.isSuccess()) {
-//            throw new JSONValidationException(result.toString());
-//        }
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            JsonNode schemaNode = mapper.readTree(validateAgainst);
+            JsonNode inputNode = mapper.readTree(toValidate);
+            JsonSchemaFactory factory = JsonSchemaFactory.byDefault();
+            JsonSchema schema = factory.getJsonSchema(schemaNode);
+            ProcessingReport result = schema.validate(inputNode);
+         
+            if (!result.isSuccess()) {
+                throw new JSONValidationException(result.toString());
+            }
+        } catch (IOException ex) {
+            throw new JSONValidationException(ex);
+        } catch (ProcessingException ex) {
+            throw new JSONValidationException(ex);
+        }
     }
     
     public static JSONObject getValidated(Request request, String schema) throws JSONValidationException {
