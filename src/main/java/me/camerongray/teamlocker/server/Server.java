@@ -65,18 +65,19 @@ public class Server {
                 }
             }
             
-            return ResponseBuilder.build(response, ResponseBuilder.objectOf(
-                    "id", (int)user.get("id"),
-                    "full_name",(String)user.get("full_name"),
-                    "username",(String)user.get("username"),
-                    "email",(String)user.get("email"),
-                    "auth_hash",(String)user.get("auth_hash"),
-                    "encrypted_private_key",(String)user.get("encrypted_private_key"),
-                    "public_key",(String)user.get("public_key"),
-                    "admin", (boolean)user.get("admin"),
-                    "pbkdf2_salt",(String)user.get("pbkdf2_salt"),
-                    "aes_iv",(String)user.get("aes_iv")
-            ));
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf("user", 
+                    ResponseBuilder.objectOf(
+                        "id", (int)user.get("id"),
+                        "full_name",(String)user.get("full_name"),
+                        "username",(String)user.get("username"),
+                        "email",(String)user.get("email"),
+                        "auth_hash",(String)user.get("auth_hash"),
+                        "encrypted_private_key",(String)user.get("encrypted_private_key"),
+                        "public_key",(String)user.get("public_key"),
+                        "admin", (boolean)user.get("admin"),
+                        "pbkdf2_salt",(String)user.get("pbkdf2_salt"),
+                        "aes_iv",(String)user.get("aes_iv")
+            )));
         });
         
         get("/users/", (request, response) -> {
@@ -117,14 +118,15 @@ public class Server {
                     ));
                 }
             }
-            return ResponseBuilder.build(response, ResponseBuilder.fromArrayList(folderObjects));
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf("folders",
+                    ResponseBuilder.fromArrayList(folderObjects)));
         });
         
         get("/validate/", (request, response) -> {
             try {
                 RequestJson.validateSchema(
-                        "{\"type\": \"object\",\"properties\": {\"firstName\": {\"type\": \"string\"},\"lastName\": {\"type\": \"string\"}},\"required\": [\"firstName\"]}",
-                        "{\"firstName\":\"foo\", \"lastName\":\"bar\"}");
+                        "{\"type\": \"object\",\"properties\": {\"firstName\": {\"type\": \"string\", \"minLength\": 1},\"lastName\": {\"type\": \"string\"}},\"required\": [\"firstName\"]}",
+                        "{\"firstName\":\"\", \"lastName\":\"bar\"}");
             } catch (JSONValidationException ex) {
                 return (ex.getMessage());
             }

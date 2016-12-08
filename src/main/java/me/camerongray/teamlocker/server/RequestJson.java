@@ -30,7 +30,7 @@ public class RequestJson {
             JsonSchemaFactory factory = JsonSchemaFactory.byDefault();
             JsonSchema schema = factory.getJsonSchema(schemaNode);
             ProcessingReport result = schema.validate(inputNode);
-         
+            
             if (!result.isSuccess()) {
                 throw new JSONValidationException(result.toString());
             }
