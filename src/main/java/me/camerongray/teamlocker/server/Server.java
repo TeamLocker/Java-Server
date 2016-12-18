@@ -30,6 +30,13 @@ public class Server {
         
         
         before((request, response) -> {
+            // Log request
+            StringBuilder sb = new StringBuilder();
+            sb.append(request.requestMethod());
+            sb.append(" " + request.url());
+            sb.append(" " + request.body());
+            System.out.println(sb);
+            
             if (request.headers("Authorization") == null) {
                 response.header("WWW-Authenticate", "Basic");
                 halt(401);
@@ -120,6 +127,56 @@ public class Server {
             }
             return ResponseBuilder.build(response, ResponseBuilder.objectOf("folders",
                     ResponseBuilder.fromArrayList(folderObjects)));
+        });
+        
+        get("/folders/:folderId/accounts/", (request, response) -> {
+            int folderId = -1;
+            try {
+                folderId = Integer.parseInt(request.params(":folderId"));
+            } catch (NumberFormatException ex) {
+                ResponseBuilder.errorHalt(response, 400, "Folder ID must be a number");
+            }
+            Auth.enforceFolderPermission(request, response, folderId, Auth.PERMISSION_READ);
+            
+            ArrayList<JSONObject> accountObjects = new ArrayList<>();
+            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+                List<DynaBean> accounts = new ArrayList<>();
+                accounts = database.getFolderAccounts(folderId, Auth.getCurrentUserId(request));
+                
+                for (DynaBean account : accounts) {
+                    accountObjects.add(ResponseBuilder.objectOf(
+                        "id", (int)account.get("account_id"),
+                        "account_metadata", (String)account.get("account_metadata"),
+                        "encrypted_aes_key", (String)account.get("encrypted_aes_key")
+                    ));
+                }
+            }
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf("accounts",
+                    ResponseBuilder.fromArrayList(accountObjects)));
+        });
+        
+        get("/accounts/:accountId/", (request, response) -> {
+            int accountId = -1;
+            try {
+                accountId = Integer.parseInt(request.params(":accountId"));
+            } catch (NumberFormatException ex) {
+                ResponseBuilder.errorHalt(response, 400, "Account ID must be a number");
+            }
+            Auth.enforceAccountPermission(request, response, accountId, Auth.PERMISSION_READ);
+            
+            DynaBean account = null;
+            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+                try {
+                    account = database.getAccount(accountId, Auth.getCurrentUserId(request));
+                } catch (ObjectNotFoundException ex) {
+                    ResponseBuilder.errorHalt(response, 404, "Account not found");
+                }
+            }
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf("account", ResponseBuilder.objectOf(
+                        "id", (int)account.get("id"),
+                        "account_metadata", (String)account.get("account_metadata"),
+                        "encrypted_aes_key", (String)account.get("encrypted_aes_key")
+            )));            
         });
         
         get("/validate/", (request, response) -> {

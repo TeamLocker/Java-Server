@@ -68,6 +68,48 @@ public class Database implements AutoCloseable {
         return this.listFromRS(rs);
     }
     
+    public List<DynaBean> getFolderAccounts(int folderId, int userId) throws SQLException {
+        this.stmt = this.connection.prepareStatement(""
+                + "SELECT * "
+                + "FROM account_data "
+                + "WHERE user_id=? "
+                + " AND account_id IN ( "
+                + "  SELECT id "
+                + "  FROM accounts "
+                + "  WHERE folder_id=? "
+                + " )");
+        this.stmt.setInt(1, userId);
+        this.stmt.setInt(2, folderId);
+        this.rs = stmt.executeQuery();
+        return this.listFromRS(this.rs);
+    }
+    
+    public DynaBean getFolderPermissions(int folderId, int userId) throws SQLException, ObjectNotFoundException {
+        this.stmt = this.connection.prepareStatement(""
+                + "SELECT read, write FROM permissions WHERE folder_id=? AND user_id=?");
+        this.stmt.setInt(1, folderId);
+        this.stmt.setInt(2, userId);
+        this.rs = stmt.executeQuery();
+        return this.objectFromRS(this.rs);
+    }
+    
+    public DynaBean getAccount(int accountId, int userId) throws SQLException, ObjectNotFoundException {
+        this.stmt = this.connection.prepareStatement(""
+                + "SELECT * FROM account_data WHERE account_id=? AND user_id=?;");
+        this.stmt.setInt(1, accountId);
+        this.stmt.setInt(2, userId);
+        this.rs = stmt.executeQuery();
+        return this.objectFromRS(this.rs);
+    }
+    
+    public int getAccountFolderId(int accountId) throws SQLException, ObjectNotFoundException {
+        this.stmt = this.connection.prepareStatement(""
+                + "SELECT folder_id FROM accounts WHERE id=?;");
+        this.stmt.setInt(1, accountId);
+        this.rs = stmt.executeQuery();
+        return (int)this.objectFromRS(this.rs).get("folder_id");
+    }
+    
     private List<DynaBean> listFromRS(ResultSet rs) throws SQLException {
         return new RowSetDynaClass(rs).getRows();
     }
