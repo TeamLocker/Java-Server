@@ -173,10 +173,33 @@ public class Server {
                 }
             }
             return ResponseBuilder.build(response, ResponseBuilder.objectOf("account", ResponseBuilder.objectOf(
-                        "id", (int)account.get("id"),
+                        "id", (int)account.get("account_id"),
                         "account_metadata", (String)account.get("account_metadata"),
                         "encrypted_aes_key", (String)account.get("encrypted_aes_key")
             )));            
+        });
+        
+        get("/accounts/:accountId/password/", (request, response) -> {
+            int accountId = -1;
+            try {
+                accountId = Integer.parseInt(request.params(":accountId"));
+            } catch (NumberFormatException ex) {
+                ResponseBuilder.errorHalt(response, 400, "Account ID must be a number");
+            }
+            Auth.enforceAccountPermission(request, response, accountId, Auth.PERMISSION_READ);
+            
+            DynaBean account = null;
+            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+                try {
+                    account = database.getAccount(accountId, Auth.getCurrentUserId(request));
+                } catch (ObjectNotFoundException ex) {
+                    ResponseBuilder.errorHalt(response, 404, "Account not found");
+                }
+            }
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf("password", ResponseBuilder.objectOf(
+                        "encrypted_password", (String)account.get("password"),
+                        "encrypted_aes_key", (String)account.get("encrypted_aes_key")
+            )));    
         });
         
         get("/validate/", (request, response) -> {
