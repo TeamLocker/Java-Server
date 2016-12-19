@@ -173,7 +173,6 @@ public class Server {
                 }
             }
             return ResponseBuilder.build(response, ResponseBuilder.objectOf("account", ResponseBuilder.objectOf(
-                        "id", (int)account.get("account_id"),
                         "account_metadata", (String)account.get("account_metadata"),
                         "encrypted_aes_key", (String)account.get("encrypted_aes_key")
             )));            
