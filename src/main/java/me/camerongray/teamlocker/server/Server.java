@@ -109,7 +109,7 @@ public class Server {
                 }
             }
             
-            return ResponseBuilder.build(response, ResponseBuilder.fromArrayList(userObjects));
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf("users", ResponseBuilder.fromArrayList(userObjects)));
         });
         
         get("/folders/", (request, response) -> {
@@ -153,6 +153,30 @@ public class Server {
             }
             return ResponseBuilder.build(response, ResponseBuilder.objectOf("accounts",
                     ResponseBuilder.fromArrayList(accountObjects)));
+        });
+        
+        get("/folders/:folderId/permissions/", (request, response) -> {
+            Auth.enforceAdmin(request, response);
+
+            List<DynaBean> permissions = new ArrayList<>();
+            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+                try {
+                    permissions = database.getFolderPermissions(Integer.parseInt(request.params(":folderId")));
+                } catch (NumberFormatException ex) {
+                    ResponseBuilder.errorHalt(response, 400, "Folder ID must be a number");
+                }
+            }
+            
+            ArrayList<JSONObject> responseObjects = new ArrayList<>();
+            for(DynaBean permission : permissions) {
+                responseObjects.add(ResponseBuilder.objectOf(
+                        "user_id", (int)permission.get("user_id"),
+                        "read", (boolean)permission.get("read"),
+                        "write", (boolean)permission.get("write")
+                ));
+            }
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf("permissions",
+                    ResponseBuilder.fromArrayList(responseObjects)));
         });
         
         get("/accounts/:accountId/", (request, response) -> {

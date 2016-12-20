@@ -86,11 +86,19 @@ public class Database implements AutoCloseable {
     
     public DynaBean getFolderPermissions(int folderId, int userId) throws SQLException, ObjectNotFoundException {
         this.stmt = this.connection.prepareStatement(""
-                + "SELECT read, write FROM permissions WHERE folder_id=? AND user_id=?");
+                + "SELECT * FROM permissions WHERE folder_id=? AND user_id=?");
         this.stmt.setInt(1, folderId);
         this.stmt.setInt(2, userId);
         this.rs = stmt.executeQuery();
         return this.objectFromRS(this.rs);
+    }
+    
+    public List<DynaBean> getFolderPermissions(int folderId) throws SQLException, ObjectNotFoundException {
+        this.stmt = this.connection.prepareStatement(""
+                + "SELECT * FROM permissions WHERE folder_id=?");
+        this.stmt.setInt(1, folderId);
+        this.rs = stmt.executeQuery();
+        return this.listFromRS(this.rs);
     }
     
     public DynaBean getAccount(int accountId, int userId) throws SQLException, ObjectNotFoundException {
@@ -108,6 +116,18 @@ public class Database implements AutoCloseable {
         this.stmt.setInt(1, accountId);
         this.rs = stmt.executeQuery();
         return (int)this.objectFromRS(this.rs).get("folder_id");
+    }
+    
+    public List<DynaBean> getFolderPublicKeys(int folderId) throws SQLException {
+        this.stmt = this.connection.prepareStatement(""
+                + "SELECT * "
+                + "FROM users "
+                + "WHERE id IN( "
+                + " ((SELECT user_id FROM permissions WHERE folder_id=? AND read=true) "
+                + "     UNION (SELECT id FROM users WHERE admin=true)))");
+        this.stmt.setInt(1, folderId);
+        this.rs = stmt.executeQuery();
+        return this.listFromRS(this.rs);
     }
     
     private List<DynaBean> listFromRS(ResultSet rs) throws SQLException {
