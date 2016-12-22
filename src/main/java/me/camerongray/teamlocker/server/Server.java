@@ -179,6 +179,31 @@ public class Server {
                     ResponseBuilder.fromArrayList(responseObjects)));
         });
         
+        get("/folders/:folderId/public_keys/", (request, response) -> {
+            int folderId = -1;
+            try {
+                folderId = Integer.parseInt(request.params(":folderId"));
+            } catch (NumberFormatException ex) {
+                ResponseBuilder.errorHalt(response, 400, "Folder ID must be a number");
+            }
+            Auth.enforceFolderPermission(request, response, folderId, Auth.PERMISSION_WRITE);
+
+            List<DynaBean> users;
+            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+                users = database.getFolderUsers(folderId);
+            }
+            
+            ArrayList<JSONObject> publicKeyObjects = new ArrayList<>();
+            for(DynaBean user : users) {
+                publicKeyObjects.add(ResponseBuilder.objectOf(
+                        "user_id", (int)user.get("id"),
+                        "public_key", (String)user.get("public_key")
+                ));
+            }
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf("public_keys",
+                    ResponseBuilder.fromArrayList(publicKeyObjects)));
+        });
+        
         get("/accounts/:accountId/", (request, response) -> {
             int accountId = -1;
             try {

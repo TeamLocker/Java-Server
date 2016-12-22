@@ -118,14 +118,16 @@ public class Database implements AutoCloseable {
         return (int)this.objectFromRS(this.rs).get("folder_id");
     }
     
-    public List<DynaBean> getFolderPublicKeys(int folderId) throws SQLException {
+    public List<DynaBean> getFolderUsers(int folderId) throws SQLException {
         this.stmt = this.connection.prepareStatement(""
                 + "SELECT * "
                 + "FROM users "
                 + "WHERE id IN( "
                 + " ((SELECT user_id FROM permissions WHERE folder_id=? AND read=true) "
-                + "     UNION (SELECT id FROM users WHERE admin=true)))");
+                + "     UNION (SELECT id FROM users WHERE admin=true))) AND"
+                + " ? IN (SELECT id FROM folders)");
         this.stmt.setInt(1, folderId);
+        this.stmt.setInt(2, folderId);
         this.rs = stmt.executeQuery();
         return this.listFromRS(this.rs);
     }
