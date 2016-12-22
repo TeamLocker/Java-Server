@@ -132,6 +132,13 @@ public class Database implements AutoCloseable {
         return this.listFromRS(this.rs);
     }
     
+    public List<DynaBean> getUserAccountData(int userId) throws SQLException {
+        this.stmt = this.connection.prepareStatement("SELECT * FROM account_data WHERE user_id=?");
+        this.stmt.setInt(1, userId);
+        this.rs = stmt.executeQuery();
+        return this.listFromRS(this.rs);
+    }
+    
     private List<DynaBean> listFromRS(ResultSet rs) throws SQLException {
         return new RowSetDynaClass(rs).getRows();
     }

@@ -87,6 +87,32 @@ public class Server {
             )));
         });
         
+        get("/users/:userId/encrypted_aes_keys/", (request, response) -> {
+            int userId;
+            if (request.params(":userId").equals("self")) {
+                userId = Auth.getCurrentUserId(request);
+            } else {
+                Auth.enforceAdmin(request, response);
+                userId = Integer.parseInt(request.params(":userId"));
+            }
+            
+            List<DynaBean> accountData;
+            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+                accountData = database.getUserAccountData(userId);
+            }
+            
+            ArrayList<JSONObject> aesKeyObjects = new ArrayList<>();
+            for (DynaBean accountDataItem : accountData) {
+                aesKeyObjects.add(ResponseBuilder.objectOf(
+                    "account_id", (int)accountDataItem.get("account_id"),
+                    "encrypted_aes_key", (String)accountDataItem.get("encrypted_aes_key")
+                ));
+            }
+            
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf(
+                    "encrypted_aes_keys", ResponseBuilder.fromArrayList(aesKeyObjects)));
+        });
+        
         get("/users/", (request, response) -> {
             Auth.enforceAdmin(request, response);
             ArrayList<JSONObject> userObjects = new ArrayList<>();
