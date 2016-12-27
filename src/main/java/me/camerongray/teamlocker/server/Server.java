@@ -253,6 +253,25 @@ public class Server {
             )));            
         });
         
+        delete("/accounts/:accountId/", (request, response) -> {
+            int accountId = -1;
+            try {
+                accountId = Integer.parseInt(request.params(":accountId"));
+            } catch (NumberFormatException ex) {
+                ResponseBuilder.errorHalt(response, 400, "Account ID must be a number");
+            }
+            Auth.enforceAccountPermission(request, response, accountId, Auth.PERMISSION_WRITE);
+            
+            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+                try {
+                    database.deleteAccount(accountId);
+                } catch (ObjectNotFoundException ex) {
+                    ResponseBuilder.errorHalt(response, 404, "Account not found");
+                }
+            }
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf("success", true));
+        });
+        
         get("/accounts/:accountId/password/", (request, response) -> {
             int accountId = -1;
             try {

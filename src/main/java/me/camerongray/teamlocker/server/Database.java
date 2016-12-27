@@ -132,6 +132,15 @@ public class Database implements AutoCloseable {
         return this.listFromRS(this.rs);
     }
     
+    public void deleteAccount(int accountId) throws SQLException, ObjectNotFoundException {
+        this.stmt = this.connection.prepareStatement("DELETE FROM accounts WHERE id=?");
+        this.stmt.setInt(1, accountId);
+        int affectedRows = this.stmt.executeUpdate();
+        if (affectedRows == 0) {
+            throw new ObjectNotFoundException();
+        }
+    }
+    
     public List<DynaBean> getUserAccountData(int userId) throws SQLException {
         this.stmt = this.connection.prepareStatement("SELECT * FROM account_data WHERE user_id=?");
         this.stmt.setInt(1, userId);
