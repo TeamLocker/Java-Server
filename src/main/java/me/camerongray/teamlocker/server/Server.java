@@ -4,6 +4,7 @@
  * and open the template in the editor.
  */
 package me.camerongray.teamlocker.server;
+import com.google.common.io.Resources;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import java.beans.PropertyVetoException;
 import java.sql.Connection;
@@ -13,6 +14,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.beanutils.DynaBean;
@@ -37,14 +39,14 @@ public class Server {
             sb.append(" " + request.body());
             System.out.println(sb);
             
-            if (request.headers("Authorization") == null) {
-                response.header("WWW-Authenticate", "Basic");
-                halt(401);
-            }
-            RequestCredentials credentials = new RequestCredentials(request);
-            if (!Auth.checkCredentials(credentials.username, credentials.password)) {
-                ResponseBuilder.errorHalt(response, 401, "Incorrect username/password");
-            }
+//            if (request.headers("Authorization") == null) {
+//                response.header("WWW-Authenticate", "Basic");
+//                halt(401);
+//            }
+//            RequestCredentials credentials = new RequestCredentials(request);
+//            if (!Auth.checkCredentials(credentials.username, credentials.password)) {
+//                ResponseBuilder.errorHalt(response, 401, "Incorrect username/password");
+//            }
         });
         
         get("/check_auth/", (request, response) -> {
@@ -272,6 +274,10 @@ public class Server {
             return ResponseBuilder.build(response, ResponseBuilder.objectOf("success", true));
         });
         
+//        put("/accounts/", (request, response) -> {
+//            
+//        });
+        
         get("/accounts/:accountId/password/", (request, response) -> {
             int accountId = -1;
             try {
@@ -296,15 +302,16 @@ public class Server {
         });
         
         get("/validate/", (request, response) -> {
+            
             try {
                 RequestJson.validateSchema(
-                        "{\"type\": \"object\",\"properties\": {\"firstName\": {\"type\": \"string\", \"minLength\": 1},\"lastName\": {\"type\": \"string\"}},\"required\": [\"firstName\"]}",
+                        "test",
                         "{\"firstName\":\"\", \"lastName\":\"bar\"}");
             } catch (JSONValidationException ex) {
                 return (ex.getMessage());
             }
             
-            return "Great success!";
+            return "Great Success!";
         });
         
         //TODO - Disable this in production!
