@@ -43,10 +43,10 @@ public class RequestJson {
         }
     }
     
-    public static JSONObject getValidated(Request request, String schema) throws JSONValidationException {
+    public static JSONObject getValidated(Request request, String schemaName) throws JSONValidationException {
         String jsonString = request.body();
         try {
-            RequestJson.validateSchema(schema, jsonString);
+            RequestJson.validateSchema(schemaName, jsonString);
         } catch (JSONValidationException ex) {
             throw new JSONValidationException(ex.getMessage());
         }

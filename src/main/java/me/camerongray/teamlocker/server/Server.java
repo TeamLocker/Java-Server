@@ -274,9 +274,25 @@ public class Server {
             return ResponseBuilder.build(response, ResponseBuilder.objectOf("success", true));
         });
         
-//        put("/accounts/", (request, response) -> {
-//            
-//        });
+        put("/accounts/", (request, response) -> {
+            JSONObject requestJson = null;
+            try {
+                requestJson = RequestJson.getValidated(request, "putAccounts");
+            } catch (JSONValidationException ex) {
+                // TODO: Friendly error messages for JSONValidationExceptions rather than raw output from validation library
+                ResponseBuilder.errorHalt(response, 400, ex.getMessage());
+            }
+            Auth.enforceFolderPermission(request, response, requestJson.getInt("folder_id"), Auth.PERMISSION_WRITE);
+            
+            Transaction transaction = new Transaction();
+            try (Database database = new Database(transaction.getConnection())) {
+                transaction.commit();
+            }
+            
+            int account_id=5;
+            
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf("account_id", account_id));
+        });
         
         get("/accounts/:accountId/password/", (request, response) -> {
             int accountId = -1;
@@ -301,18 +317,18 @@ public class Server {
             )));    
         });
         
-        get("/validate/", (request, response) -> {
-            
-            try {
-                RequestJson.validateSchema(
-                        "test",
-                        "{\"firstName\":\"\", \"lastName\":\"bar\"}");
-            } catch (JSONValidationException ex) {
-                return (ex.getMessage());
-            }
-            
-            return "Great Success!";
-        });
+//        get("/validate/", (request, response) -> {
+//            
+//            try {
+//                RequestJson.validateSchema(
+//                        "test",
+//                        "{\"firstName\":\"\", \"lastName\":\"bar\"}");
+//            } catch (JSONValidationException ex) {
+//                return (ex.getMessage());
+//            }
+//            
+//            return "Great Success!";
+//        });
         
         //TODO - Disable this in production!
         spark.debug.DebugScreen.enableDebugScreen();
