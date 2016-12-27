@@ -155,6 +155,25 @@ public class Server {
                     ResponseBuilder.fromArrayList(folderObjects)));
         });
         
+        delete("/folders/:folderId/", (request, response) -> {
+            int folderId = -1;
+            try {
+                folderId = Integer.parseInt(request.params(":folderId"));
+            } catch (NumberFormatException ex) {
+                ResponseBuilder.errorHalt(response, 400, "Folder ID must be a number");
+            }
+            Auth.enforceFolderPermission(request, response, folderId, Auth.PERMISSION_WRITE);
+            
+            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+                try {
+                    database.deleteFolder(folderId);
+                } catch (ObjectNotFoundException ex) {
+                    ResponseBuilder.errorHalt(response, 404, "Folder not found");
+                }
+            }
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf("success", true));
+        });
+        
         get("/folders/:folderId/accounts/", (request, response) -> {
             int folderId = -1;
             try {
