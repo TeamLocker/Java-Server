@@ -13,23 +13,7 @@ import java.util.logging.Logger;
 import org.apache.commons.beanutils.DynaBean;
 import spark.Request;
 import spark.Response;
-import static spark.Spark.halt;
-import static spark.Spark.halt;
-import static spark.Spark.halt;
-import static spark.Spark.halt;
 import org.mindrot.jbcrypt.BCrypt;
-import static spark.Spark.halt;
-import static spark.Spark.halt;
-import static spark.Spark.halt;
-import static spark.Spark.halt;
-import static spark.Spark.halt;
-import static spark.Spark.halt;
-import static spark.Spark.halt;
-import static spark.Spark.halt;
-import static spark.Spark.halt;
-import static spark.Spark.halt;
-import static spark.Spark.halt;
-import static spark.Spark.halt;
 
 /**
  *
