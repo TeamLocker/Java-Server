@@ -306,7 +306,10 @@ public class Server {
             Connection connection = ConnectionManager.getPooledConnection();
             try (Database database = new Database(connection)) {
                 Transaction transaction = new Transaction(connection);
-                transaction.commit();
+                
+                System.out.println(database.addAccount(1));
+                
+                transaction.rollback();
             }
             
             int account_id=5;

@@ -9,6 +9,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -132,6 +133,13 @@ public class Database implements AutoCloseable {
         return this.listFromRS(this.rs);
     }
     
+    public int addAccount(int folderId) throws SQLException {
+        this.stmt = this.connection.prepareStatement("INSERT INTO accounts (folder_id) VALUES (?) RETURNING id;");
+        this.stmt.setInt(1, folderId);
+        this.rs = this.stmt.executeQuery();
+        return this.idFromRS(this.rs);
+    }
+    
     public void deleteAccount(int accountId) throws SQLException, ObjectNotFoundException {
         this.stmt = this.connection.prepareStatement("DELETE FROM accounts WHERE id=?");
         this.stmt.setInt(1, accountId);
@@ -167,6 +175,11 @@ public class Database implements AutoCloseable {
             throw new ObjectNotFoundException();
         }
         return rows.get(0);
+    }
+    
+    private int idFromRS(ResultSet rs) throws SQLException {
+        List<DynaBean> rows = this.listFromRS(rs);
+        return (int)rows.get(0).get("id");
     }
     
     public void close() {
