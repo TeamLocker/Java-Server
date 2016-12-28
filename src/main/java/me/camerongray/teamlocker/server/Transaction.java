@@ -30,12 +30,10 @@ public class Transaction {
     
     public void commit() throws SQLException {
         this.connection.createStatement().execute("COMMIT");
-        this.connection.close();
     }
     
     public void rollback() throws SQLException {
         this.connection.createStatement().execute("ROLLBACK");
-        this.connection.close();
     }
 
     public String getId() {
