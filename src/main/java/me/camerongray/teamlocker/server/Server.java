@@ -39,14 +39,14 @@ public class Server {
             sb.append(" " + request.body());
             System.out.println(sb);
             
-//            if (request.headers("Authorization") == null) {
-//                response.header("WWW-Authenticate", "Basic");
-//                halt(401);
-//            }
-//            RequestCredentials credentials = new RequestCredentials(request);
-//            if (!Auth.checkCredentials(credentials.username, credentials.password)) {
-//                ResponseBuilder.errorHalt(response, 401, "Incorrect username/password");
-//            }
+            if (request.headers("Authorization") == null) {
+                response.header("WWW-Authenticate", "Basic");
+                halt(401);
+            }
+            RequestCredentials credentials = new RequestCredentials(request);
+            if (!Auth.checkCredentials(credentials.username, credentials.password)) {
+                ResponseBuilder.errorHalt(response, 401, "Incorrect username/password");
+            }
         });
         
         get("/check_auth/", (request, response) -> {
@@ -303,8 +303,9 @@ public class Server {
             }
             Auth.enforceFolderPermission(request, response, requestJson.getInt("folder_id"), Auth.PERMISSION_WRITE);
             
-            Transaction transaction = new Transaction();
-            try (Database database = new Database(transaction.getConnection())) {
+            Connection connection = ConnectionManager.getPooledConnection();
+            try (Database database = new Database(connection)) {
+                Transaction transaction = new Transaction(connection);
                 transaction.commit();
             }
             

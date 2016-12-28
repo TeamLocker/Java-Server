@@ -18,9 +18,9 @@ public class Transaction {
     private String id;
     private Connection connection;
 
-    public Transaction() throws SQLException {
+    public Transaction(Connection connection) throws SQLException {
         this.id = UUID.randomUUID().toString();
-        this.connection = ConnectionManager.getNewConnection();
+        this.connection = connection;
         this.connection.createStatement().execute("START TRANSACTION");
     }
 
