@@ -18,6 +18,7 @@ import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.beanutils.DynaBean;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import static spark.Spark.*;
 
@@ -303,18 +304,38 @@ public class Server {
             }
             Auth.enforceFolderPermission(request, response, requestJson.getInt("folder_id"), Auth.PERMISSION_WRITE);
             
+            int accountId = -1;
             Connection connection = ConnectionManager.getPooledConnection();
             try (Database database = new Database(connection)) {
+                try {
+                    database.getFolder(requestJson.getInt("folder_id"));
+                } catch(ObjectNotFoundException ex) {
+                    ResponseBuilder.errorHalt(response, 404, "Folder not found");
+                }
                 Transaction transaction = new Transaction(connection);
                 
-                System.out.println(database.addAccount(1));
+                try {
+                    accountId = database.addAccount(requestJson.getInt("folder_id"));
+                    JSONArray accountDataItems = requestJson.getJSONArray("encrypted_account_data");
+                    for (int i = 0; i < accountDataItems.length(); i++) {
+                        JSONObject accountDataItem = accountDataItems.getJSONObject(i);
+                        database.addAccountDataItem(
+                                accountId,
+                                accountDataItem.getInt("user_id"),
+                                accountDataItem.getString("account_metadata"),
+                                accountDataItem.getString("password"),
+                                accountDataItem.getString("encrypted_aes_key")
+                        );
+                    }
+                } catch (SQLException ex) {
+                    transaction.rollback();
+                    ResponseBuilder.errorHalt(response, 500, "Error adding account - " + ex);
+                }
                 
-                transaction.rollback();
+                transaction.commit();
             }
-            
-            int account_id=5;
-            
-            return ResponseBuilder.build(response, ResponseBuilder.objectOf("account_id", account_id));
+                        
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf("account_id", accountId));
         });
         
         get("/accounts/:accountId/password/", (request, response) -> {

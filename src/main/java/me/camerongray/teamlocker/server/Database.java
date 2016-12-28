@@ -48,6 +48,13 @@ public class Database implements AutoCloseable {
         this.rs = stmt.executeQuery();
         return this.listFromRS(rs);
     }
+    
+    public DynaBean getFolder(int folderId) throws SQLException, ObjectNotFoundException {
+        this.stmt = this.connection.prepareStatement("SELECT * FROM folders WHERE id=?");
+        this.stmt.setInt(1, folderId);
+        this.rs = stmt.executeQuery();
+        return this.objectFromRS(this.rs);
+    }
 
     public List<DynaBean> getFolders(int userId) throws SQLException, ObjectNotFoundException {
         boolean isAdmin = (boolean)this.getUser(userId).get("admin");
@@ -136,6 +143,21 @@ public class Database implements AutoCloseable {
     public int addAccount(int folderId) throws SQLException {
         this.stmt = this.connection.prepareStatement("INSERT INTO accounts (folder_id) VALUES (?) RETURNING id;");
         this.stmt.setInt(1, folderId);
+        this.rs = this.stmt.executeQuery();
+        return this.idFromRS(this.rs);
+    }
+    
+    public int addAccountDataItem(int accountId, int userId, String accountMetadata, String password, String encryptedAesKey) throws SQLException {
+        this.stmt = this.connection.prepareStatement(""
+                + "INSERT INTO account_data "
+                + " (account_id, user_id, account_metadata, password, encrypted_aes_key)"
+                + "VALUES (?, ?, ?, ?, ?)"
+                + "RETURNING id;");
+        this.stmt.setInt(1, accountId);
+        this.stmt.setInt(2, userId);
+        this.stmt.setString(3, accountMetadata);
+        this.stmt.setString(4, password);
+        this.stmt.setString(5, encryptedAesKey);
         this.rs = this.stmt.executeQuery();
         return this.idFromRS(this.rs);
     }
