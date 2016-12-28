@@ -263,7 +263,7 @@ public class Server {
             DynaBean account = null;
             try (Database database = new Database(ConnectionManager.getPooledConnection())) {
                 try {
-                    account = database.getAccount(accountId, Auth.getCurrentUserId(request));
+                    account = database.getAccountData(accountId, Auth.getCurrentUserId(request));
                 } catch (ObjectNotFoundException ex) {
                     ResponseBuilder.errorHalt(response, 404, "Account not found");
                 }
@@ -329,7 +329,7 @@ public class Server {
             DynaBean account = null;
             try (Database database = new Database(ConnectionManager.getPooledConnection())) {
                 try {
-                    account = database.getAccount(accountId, Auth.getCurrentUserId(request));
+                    account = database.getAccountData(accountId, Auth.getCurrentUserId(request));
                 } catch (ObjectNotFoundException ex) {
                     ResponseBuilder.errorHalt(response, 404, "Account not found");
                 }

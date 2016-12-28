@@ -18,6 +18,18 @@ import static spark.Spark.halt;
 import static spark.Spark.halt;
 import static spark.Spark.halt;
 import org.mindrot.jbcrypt.BCrypt;
+import static spark.Spark.halt;
+import static spark.Spark.halt;
+import static spark.Spark.halt;
+import static spark.Spark.halt;
+import static spark.Spark.halt;
+import static spark.Spark.halt;
+import static spark.Spark.halt;
+import static spark.Spark.halt;
+import static spark.Spark.halt;
+import static spark.Spark.halt;
+import static spark.Spark.halt;
+import static spark.Spark.halt;
 
 /**
  *
@@ -60,7 +72,7 @@ public class Auth {
     public static boolean getAccountPermission(Request request, Response response, int accountId, int permission) throws SQLException, ObjectNotFoundException {
         int folderId = -1;
         try (Database database = new Database(ConnectionManager.getPooledConnection())) {
-            folderId = database.getAccountFolderId(accountId);
+            folderId = database.getAccount(accountId);
         }
         return Auth.getFolderPermission(request, response, folderId, permission);
     }

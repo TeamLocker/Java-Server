@@ -102,7 +102,7 @@ public class Database implements AutoCloseable {
         return this.listFromRS(this.rs);
     }
     
-    public DynaBean getAccount(int accountId, int userId) throws SQLException, ObjectNotFoundException {
+    public DynaBean getAccountData(int accountId, int userId) throws SQLException, ObjectNotFoundException {
         this.stmt = this.connection.prepareStatement(""
                 + "SELECT * FROM account_data WHERE account_id=? AND user_id=?;");
         this.stmt.setInt(1, accountId);
@@ -111,7 +111,7 @@ public class Database implements AutoCloseable {
         return this.objectFromRS(this.rs);
     }
     
-    public int getAccountFolderId(int accountId) throws SQLException, ObjectNotFoundException {
+    public int getAccount(int accountId) throws SQLException, ObjectNotFoundException {
         this.stmt = this.connection.prepareStatement(""
                 + "SELECT folder_id FROM accounts WHERE id=?;");
         this.stmt.setInt(1, accountId);
