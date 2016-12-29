@@ -53,7 +53,7 @@ public class ResponseBuilder {
     
     public static void errorHalt(spark.Response response, int statusCode, String message) {
         halt(statusCode, ResponseBuilder.build(response, ResponseBuilder.objectOf(
-                "success", false,
+                "error", true,
                 "message", message
         )));
     }
