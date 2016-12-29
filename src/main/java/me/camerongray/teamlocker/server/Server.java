@@ -44,10 +44,10 @@ public class Server {
                 response.header("WWW-Authenticate", "Basic");
                 halt(401);
             }
-            RequestCredentials credentials = new RequestCredentials(request);
-            if (!Auth.checkCredentials(credentials.username, credentials.password)) {
-                ResponseBuilder.errorHalt(response, 401, "Incorrect username/password");
-            }
+//            RequestCredentials credentials = new RequestCredentials(request);
+//            if (!Auth.checkCredentials(credentials.username, credentials.password)) {
+//                ResponseBuilder.errorHalt(response, 401, "Incorrect username/password");
+//            }
         });
         
         get("/check_auth/", (request, response) -> {
@@ -156,6 +156,31 @@ public class Server {
             }
             return ResponseBuilder.build(response, ResponseBuilder.objectOf("folders",
                     ResponseBuilder.fromArrayList(folderObjects)));
+        });
+        
+        put("/folders/", (request, response) -> {
+            JSONObject requestJson = null;
+            try {
+                requestJson = RequestJson.getValidated(request, "putFolder");
+            } catch (JSONValidationException ex) {
+                // TODO: Friendly error messages for JSONValidationExceptions rather than raw output from validation library
+                ResponseBuilder.errorHalt(response, 400, ex.getMessage());
+            }
+            Auth.enforceAdmin(request, response);
+            
+            int folderId = -1;
+            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+                try {
+                    database.getFolder(requestJson.getString("name"));
+                    ResponseBuilder.errorHalt(response, 409, "A folder with that name already exists");
+                } catch(ObjectNotFoundException ex) {
+                    // We don't care if it doesn't exist, we actually want this exception to be thrown!
+                }
+                
+                folderId = database.addFolder(requestJson.getString("name"));
+            }
+                        
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf("folder_id", folderId));
         });
         
         delete("/folders/:folderId/", (request, response) -> {

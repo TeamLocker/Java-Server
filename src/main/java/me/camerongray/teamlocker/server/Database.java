@@ -55,6 +55,13 @@ public class Database implements AutoCloseable {
         this.rs = stmt.executeQuery();
         return this.objectFromRS(this.rs);
     }
+    
+    public DynaBean getFolder(String folderName) throws SQLException, ObjectNotFoundException {
+        this.stmt = this.connection.prepareStatement("SELECT * FROM folders WHERE name=?");
+        this.stmt.setString(1, folderName);
+        this.rs = stmt.executeQuery();
+        return this.objectFromRS(this.rs);
+    }
 
     public List<DynaBean> getFolders(int userId) throws SQLException, ObjectNotFoundException {
         boolean isAdmin = (boolean)this.getUser(userId).get("admin");
@@ -138,6 +145,13 @@ public class Database implements AutoCloseable {
         this.stmt.setInt(2, folderId);
         this.rs = stmt.executeQuery();
         return this.listFromRS(this.rs);
+    }
+    
+    public int addFolder(String folderName) throws SQLException {
+        this.stmt = this.connection.prepareStatement("INSERT INTO folders (name) VALUES (?) RETURNING id;");
+        this.stmt.setString(1, folderName);
+        this.rs = this.stmt.executeQuery();
+        return this.idFromRS(this.rs);
     }
     
     public int addAccount(int folderId) throws SQLException {
