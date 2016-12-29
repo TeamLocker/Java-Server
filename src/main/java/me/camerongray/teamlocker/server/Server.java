@@ -44,10 +44,10 @@ public class Server {
                 response.header("WWW-Authenticate", "Basic");
                 halt(401);
             }
-//            RequestCredentials credentials = new RequestCredentials(request);
-//            if (!Auth.checkCredentials(credentials.username, credentials.password)) {
-//                ResponseBuilder.errorHalt(response, 401, "Incorrect username/password");
-//            }
+            RequestCredentials credentials = new RequestCredentials(request);
+            if (!Auth.checkCredentials(credentials.username, credentials.password)) {
+                ResponseBuilder.errorHalt(response, 401, "Incorrect username/password");
+            }
         });
         
         get("/check_auth/", (request, response) -> {
