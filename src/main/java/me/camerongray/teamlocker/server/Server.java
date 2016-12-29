@@ -386,19 +386,6 @@ public class Server {
             )));    
         });
         
-//        get("/validate/", (request, response) -> {
-//            
-//            try {
-//                RequestJson.validateSchema(
-//                        "test",
-//                        "{\"firstName\":\"\", \"lastName\":\"bar\"}");
-//            } catch (JSONValidationException ex) {
-//                return (ex.getMessage());
-//            }
-//            
-//            return "Great Success!";
-//        });
-        
         //TODO - Disable this in production!
         spark.debug.DebugScreen.enableDebugScreen();
     }
