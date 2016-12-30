@@ -1,0 +1,18 @@
+{
+    "type": "object",
+    "properties": {
+        "permissions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "user_id": {"type": "integer"},
+                    "read": {"type": "boolean"},
+                    "write": {"type": "boolean"}
+                },
+                "required": ["user_id", "read", "write"]
+            }
+        }
+    },
+    "required": ["permissions"]
+}

@@ -252,6 +252,60 @@ public class Server {
                     ResponseBuilder.fromArrayList(responseObjects)));
         });
         
+        post("/folders/:folderId/permissions/", (request, response) -> {
+            Auth.enforceAdmin(request, response);
+            int folderId = -1;
+            try {
+                folderId = Integer.parseInt(request.params(":folderId"));
+            } catch(NumberFormatException ex) {
+                ResponseBuilder.errorHalt(response, 400, "Folder ID must be a number");
+            }
+            
+            JSONObject requestJson = RequestJson.getValidated(request, "postFoldersPermissions");
+            
+            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+                try {
+                    database.getFolder(folderId);
+                } catch (ObjectNotFoundException ex) {
+                    ResponseBuilder.errorHalt(response, 404, "Folder not found!");
+                }
+                Transaction transaction = new Transaction(database.getConnection());
+                
+                try {
+                    database.deleteFolderPermissions(folderId);
+
+                    JSONArray permissions = requestJson.getJSONArray("permissions");
+                    for (int i = 0; i < permissions.length(); i++) {
+                        JSONObject permission = permissions.getJSONObject(i);
+                        try {
+                            DynaBean user = database.getUser(permission.getInt("user_id"));
+                            if ((boolean)user.get("admin")) {
+                                transaction.rollback();
+                                ResponseBuilder.errorHalt(response, 400, "Trying to set permissions "
+                                        + "for an administrator, administrators already have full permission.");
+                            }
+                        } catch (ObjectNotFoundException ex) {
+                            transaction.rollback();
+                            ResponseBuilder.errorHalt(response, 404, "User not found!");
+                        }
+
+                        database.addPermission(
+                                folderId,
+                                permission.getInt("user_id"),
+                                permission.getBoolean("read"),
+                                permission.getBoolean("write")
+                        );
+                    }
+                } catch (SQLException ex) {
+                    transaction.rollback();
+                    ResponseBuilder.errorHalt(response, 500, "Error updating permissions - " + ex);
+                }
+                transaction.commit();
+            }
+            
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf("success", true));
+        });
+        
         get("/folders/:folderId/public_keys/", (request, response) -> {
             int folderId = -1;
             try {

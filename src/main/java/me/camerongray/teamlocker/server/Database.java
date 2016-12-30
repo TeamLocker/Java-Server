@@ -108,12 +108,29 @@ public class Database implements AutoCloseable {
         return this.objectFromRS(this.rs);
     }
     
+    public void deleteFolderPermissions(int folderId) throws SQLException {
+        this.stmt = this.connection.prepareStatement("DELETE FROM permissions WHERE folder_id=?");
+        this.stmt.setInt(1, folderId);
+        this.stmt.executeUpdate();
+    }
+    
     public List<DynaBean> getFolderPermissions(int folderId) throws SQLException, ObjectNotFoundException {
         this.stmt = this.connection.prepareStatement(""
                 + "SELECT * FROM permissions WHERE folder_id=?");
         this.stmt.setInt(1, folderId);
         this.rs = stmt.executeQuery();
         return this.listFromRS(this.rs);
+    }
+    
+    public int addPermission(int folderId, int userId, boolean read, boolean write) throws SQLException {
+        this.stmt = this.connection.prepareStatement(""
+                + "INSERT INTO permissions (folder_id, user_id, read, write) VALUES (?, ?, ?, ?) RETURNING id");
+        this.stmt.setInt(1, folderId);
+        this.stmt.setInt(2, userId);
+        this.stmt.setBoolean(3, read);
+        this.stmt.setBoolean(4, write);
+        this.rs = this.stmt.executeQuery();
+        return this.idFromRS(this.rs);
     }
     
     public DynaBean getAccountData(int accountId, int userId) throws SQLException, ObjectNotFoundException {
