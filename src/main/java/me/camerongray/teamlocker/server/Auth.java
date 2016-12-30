@@ -30,10 +30,6 @@ public class Auth {
     }
     
     public static void enforceFolderPermission(Request request, Response response, int folderId, int permission) throws SQLException, ObjectNotFoundException {
-        if (Auth.currentUserIsAdmin(request)) {
-            return;
-        }
-        
         boolean hasPermission = Auth.getFolderPermission(request, response, folderId, permission);
         if (!hasPermission) {
             String permissionName = (permission == Auth.PERMISSION_READ) ? "read" : "write";
@@ -41,11 +37,7 @@ public class Auth {
         }
     }
     
-    public static void enforceAccountPermission(Request request, Response response, int accountId, int permission) throws SQLException, ObjectNotFoundException {
-        if (Auth.currentUserIsAdmin(request)) {
-            return;
-        }
-        
+    public static void enforceAccountPermission(Request request, Response response, int accountId, int permission) throws SQLException, ObjectNotFoundException {       
         boolean hasPermission = Auth.getAccountPermission(request, response, accountId, permission);
         if (!hasPermission) {
             String permissionName = (permission == Auth.PERMISSION_READ) ? "read" : "write";
@@ -54,6 +46,10 @@ public class Auth {
     }
     
     public static boolean getAccountPermission(Request request, Response response, int accountId, int permission) throws SQLException, ObjectNotFoundException {
+        if (Auth.currentUserIsAdmin(request)) {
+            return true;
+        }
+        
         int folderId = -1;
         try (Database database = new Database(ConnectionManager.getPooledConnection())) {
             folderId = database.getAccount(accountId);
@@ -62,10 +58,18 @@ public class Auth {
     }
     
     public static boolean getFolderPermission(Request request, Response response, int folderId, int permission) throws SQLException, ObjectNotFoundException {
+        if (Auth.currentUserIsAdmin(request)) {
+            return true;
+        }
+        
         int userId = Auth.getCurrentUserId(request);
         DynaBean permissions;
         try (Database database = new Database(ConnectionManager.getPooledConnection())) {
-            permissions = database.getFolderPermissions(folderId, userId);
+            try {
+                permissions = database.getFolderPermissions(folderId, userId);
+            } catch (ObjectNotFoundException ex) {
+                return false;
+            }
         }
         boolean hasPermission = false;
         if (permission == Auth.PERMISSION_READ) {

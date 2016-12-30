@@ -212,15 +212,34 @@ public class Database implements AutoCloseable {
         }
     }
     
-    public void deleteAccountData(int accountId) throws SQLException {
-        this.stmt = this.connection.prepareStatement("DELETE FROM account_data WHERE account_id=?");
+    public void deleteAccountData(int accountId, int userId) throws SQLException {
+        this.stmt = this.connection.prepareStatement("DELETE FROM account_data WHERE account_id=? AND user_id=?");
         this.stmt.setInt(1, accountId);
+        this.stmt.setInt(2, userId);
+        this.stmt.executeUpdate();
+    }
+    
+    public void deleteAccountDataForFolder(int folderId, int userId) throws SQLException {
+        System.out.println(folderId + " " + userId);
+        this.stmt = this.connection.prepareStatement("DELETE FROM account_data WHERE account_id IN (SELECT id FROM accounts WHERE folder_id=?) AND user_id=?");
+        this.stmt.setInt(1, folderId);
+        this.stmt.setInt(2, userId);
         this.stmt.executeUpdate();
     }
     
     public void deleteFolder(int folderId) throws SQLException, ObjectNotFoundException {
         this.stmt = this.connection.prepareStatement("DELETE FROM folders WHERE id=?");
         this.stmt.setInt(1, folderId);
+        int affectedRows = this.stmt.executeUpdate();
+        if (affectedRows == 0) {
+            throw new ObjectNotFoundException();
+        }
+    }
+    
+    public void updateFolder(int folderId, String name) throws SQLException, ObjectNotFoundException {
+        this.stmt = this.connection.prepareStatement("UPDATE folders SET (name) = (?) WHERE id=?");
+        this.stmt.setString(1, name);
+        this.stmt.setInt(2, folderId);
         int affectedRows = this.stmt.executeUpdate();
         if (affectedRows == 0) {
             throw new ObjectNotFoundException();

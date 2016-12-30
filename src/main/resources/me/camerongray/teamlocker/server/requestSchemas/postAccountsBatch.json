@@ -1,0 +1,29 @@
+{
+    "type": "object",
+    "properties": {
+        "accounts": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "account_id": {"type": "integer"},
+                    "encrypted_account_data": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "user_id": {"type": "integer"},
+                                "password": {"type": "string"},
+                                "account_metadata": {"type": "string"},
+                                "encrypted_aes_key": {"type": "string"}
+                            },
+                            "required": ["user_id", "password", "encrypted_aes_key",
+                                "account_metadata"]
+                        }
+                    }
+                },
+                "required": ["account_id", "encrypted_account_data"]
+            }
+        }
+    }
+}

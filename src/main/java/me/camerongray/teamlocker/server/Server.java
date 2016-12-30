@@ -183,6 +183,33 @@ public class Server {
             return ResponseBuilder.build(response, ResponseBuilder.objectOf("folder_id", folderId));
         });
         
+        post("/folders/:folderId/", (request, response) -> {
+            int folderId = -1;
+            try {
+                folderId = Integer.parseInt(request.params(":folderId"));
+            } catch (NumberFormatException ex) {
+                ResponseBuilder.errorHalt(response, 400, "Folder ID must be a number");
+            }
+            Auth.enforceFolderPermission(request, response, folderId, Auth.PERMISSION_WRITE);
+            
+            JSONObject requestJson = null;
+            try {
+                requestJson = RequestJson.getValidated(request, "postFolders");
+            } catch (JSONValidationException ex) {
+                // TODO: Friendly error messages for JSONValidationExceptions rather than raw output from validation library
+                ResponseBuilder.errorHalt(response, 400, ex.getMessage());
+            }
+            
+            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+                try {
+                    database.updateFolder(folderId, requestJson.getString("name"));
+                } catch (ObjectNotFoundException ex) {
+                    ResponseBuilder.errorHalt(response, 404, "Folder not found");
+                }
+            }
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf("success", true));
+        });
+        
         delete("/folders/:folderId/", (request, response) -> {
             int folderId = -1;
             try {
@@ -277,8 +304,11 @@ public class Server {
                     JSONArray permissions = requestJson.getJSONArray("permissions");
                     for (int i = 0; i < permissions.length(); i++) {
                         JSONObject permission = permissions.getJSONObject(i);
+                        int userId = permission.getInt("user_id");
+                        boolean read = permission.getBoolean("read");
+                        boolean write = permission.getBoolean("write");
                         try {
-                            DynaBean user = database.getUser(permission.getInt("user_id"));
+                            DynaBean user = database.getUser(userId);
                             if ((boolean)user.get("admin")) {
                                 transaction.rollback();
                                 ResponseBuilder.errorHalt(response, 400, "Trying to set permissions "
@@ -288,13 +318,23 @@ public class Server {
                             transaction.rollback();
                             ResponseBuilder.errorHalt(response, 404, "User not found!");
                         }
-
-                        database.addPermission(
-                                folderId,
-                                permission.getInt("user_id"),
-                                permission.getBoolean("read"),
-                                permission.getBoolean("write")
-                        );
+                        
+                        if (write && !read) {
+                            transaction.rollback();
+                            ResponseBuilder.errorHalt(response, 400, "Users must be able "
+                                    + "to read a folder if they are to write to it");
+                        }
+                        
+                        if (!(write || read)) {
+                            database.deleteAccountDataForFolder(folderId, userId);
+                        } else {
+                            database.addPermission(
+                                    folderId,
+                                    userId,
+                                    read,
+                                    write
+                            );
+                        }
                     }
                 } catch (SQLException ex) {
                     transaction.rollback();
@@ -376,7 +416,7 @@ public class Server {
         post("/accounts/:accountId/", (request, response) -> {
             JSONObject requestJson = null;
             try {
-                requestJson = RequestJson.getValidated(request, "postAccounts");
+                requestJson = RequestJson.getValidated(request, "postAccountsSingle");
             } catch (JSONValidationException ex) {
                 // TODO: Friendly error messages for JSONValidationExceptions rather than raw output from validation library
                 ResponseBuilder.errorHalt(response, 400, "JSON Validation Error - " + ex.getMessage());
@@ -407,13 +447,14 @@ public class Server {
                 try {
                     database.updateAccount(accountId, requestJson.getInt("folder_id"));
 
-                    database.deleteAccountData(accountId);
                     JSONArray accountDataItems = requestJson.getJSONArray("encrypted_account_data");
                     for (int i = 0; i < accountDataItems.length(); i++) {
                         JSONObject accountDataItem = accountDataItems.getJSONObject(i);
+                        int userId = accountDataItem.getInt("user_id");
+                        database.deleteAccountData(accountId, userId);
                         database.addAccountDataItem(
                                 accountId,
-                                accountDataItem.getInt("user_id"),
+                                userId,
                                 accountDataItem.getString("account_metadata"),
                                 accountDataItem.getString("password"),
                                 accountDataItem.getString("encrypted_aes_key")
@@ -430,6 +471,51 @@ public class Server {
                 transaction.commit();
             }
                         
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf("success", true));
+        });
+        
+        post("/accounts/", (request, response) -> {
+            JSONObject requestJson = RequestJson.getValidated(request, "postAccountsBatch");
+            JSONArray accounts = requestJson.getJSONArray("accounts");
+
+            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+                Transaction transaction = new Transaction(database.getConnection());
+                try {
+                    for (int i = 0; i < accounts.length(); i++) {
+                        JSONObject account = accounts.getJSONObject(i);
+                        int accountId = account.getInt("account_id");
+                        try {
+                            if (!Auth.getAccountPermission(request, response, accountId, Auth.PERMISSION_WRITE)) {
+                                transaction.rollback();
+                                ResponseBuilder.errorHalt(response, 403, "You do not have write permission for account " + accountId);
+                            }
+                        } catch (ObjectNotFoundException ex) {
+                            transaction.rollback();
+                            ex.printStackTrace();
+                            ResponseBuilder.errorHalt(response, 404, "Account not found");
+                        }
+
+                        JSONArray accountDataItems = account.getJSONArray("encrypted_account_data");
+                        for (int j = 0; j < accountDataItems.length(); j++) {
+                            JSONObject accountDataItem = accountDataItems.getJSONObject(j);
+                            int userId = accountDataItem.getInt("user_id");
+                            database.deleteAccountData(accountId, userId);
+                            database.addAccountDataItem(
+                                    accountId,
+                                    userId,
+                                    accountDataItem.getString("account_metadata"),
+                                    accountDataItem.getString("password"),
+                                    accountDataItem.getString("encrypted_aes_key")
+                            );
+                        }
+                    }
+                } catch (SQLException ex) {
+                    transaction.rollback();
+                    ResponseBuilder.errorHalt(response, 500, "Error saving accounts - " + ex);
+                }
+                transaction.commit();
+            }
+            
             return ResponseBuilder.build(response, ResponseBuilder.objectOf("success", true));
         });
         
