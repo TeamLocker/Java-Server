@@ -319,6 +319,66 @@ public class Server {
             return ResponseBuilder.build(response, ResponseBuilder.objectOf("success", true));
         });
         
+        post("/accounts/:accountId/", (request, response) -> {
+            JSONObject requestJson = null;
+            try {
+                requestJson = RequestJson.getValidated(request, "postAccounts");
+            } catch (JSONValidationException ex) {
+                // TODO: Friendly error messages for JSONValidationExceptions rather than raw output from validation library
+                ResponseBuilder.errorHalt(response, 400, "JSON Validation Error - " + ex.getMessage());
+            }
+            
+            int accountId = -1;
+            try {
+                accountId = Integer.parseInt(request.params(":accountId"));
+            } catch (NumberFormatException ex) {
+                ResponseBuilder.errorHalt(response, 400, "Account ID must be a number");
+            }
+            
+            Auth.enforceAccountPermission(request, response, accountId, Auth.PERMISSION_WRITE);
+            
+            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+                try {
+                    database.getAccount(accountId);
+                } catch(ObjectNotFoundException ex) {
+                    ResponseBuilder.errorHalt(response, 404, "Account not found");
+                }
+                try {
+                    database.getFolder(requestJson.getInt("folder_id"));
+                } catch(ObjectNotFoundException ex) {
+                    ResponseBuilder.errorHalt(response, 404, "Folder not found");
+                }
+                
+                Transaction transaction = new Transaction(database.getConnection());
+                try {
+                    database.updateAccount(accountId, requestJson.getInt("folder_id"));
+
+                    database.deleteAccountData(accountId);
+                    JSONArray accountDataItems = requestJson.getJSONArray("encrypted_account_data");
+                    for (int i = 0; i < accountDataItems.length(); i++) {
+                        JSONObject accountDataItem = accountDataItems.getJSONObject(i);
+                        database.addAccountDataItem(
+                                accountId,
+                                accountDataItem.getInt("user_id"),
+                                accountDataItem.getString("account_metadata"),
+                                accountDataItem.getString("password"),
+                                accountDataItem.getString("encrypted_aes_key")
+                        );
+                    }
+                } catch (SQLException ex) {
+                    transaction.rollback();
+                    ResponseBuilder.errorHalt(response, 500, "Error saving account - " + ex);
+                } catch (ObjectNotFoundException ex) {
+                    transaction.rollback();
+                    ResponseBuilder.errorHalt(response, 404, "Error saving account - Object Not Found");
+                }
+                
+                transaction.commit();
+            }
+                        
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf("success", true));
+        });
+        
         put("/accounts/", (request, response) -> {
             JSONObject requestJson = null;
             try {
@@ -386,7 +446,19 @@ public class Server {
             )));    
         });
         
+        exception(Exception.class, (e, request, response) -> {
+            System.out.println("An unhandled exception occurred!");
+            System.out.println(e.toString());
+            e.printStackTrace();
+            response.status(500);
+            response.type("application/json");
+            response.body(ResponseBuilder.objectOf(
+                "error", true,
+                "message", "An unhandled server error occurred! - " + e.toString()
+            ).toString());
+        });
+        
         //TODO - Disable this in production!
-        spark.debug.DebugScreen.enableDebugScreen();
+//        spark.debug.DebugScreen.enableDebugScreen();
     }
 }

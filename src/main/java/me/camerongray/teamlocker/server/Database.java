@@ -161,6 +161,16 @@ public class Database implements AutoCloseable {
         return this.idFromRS(this.rs);
     }
     
+    public void updateAccount(int accountId, int folderId) throws SQLException, ObjectNotFoundException {
+        this.stmt = this.connection.prepareStatement("UPDATE accounts SET (folder_id) = (?) WHERE id=?;");
+        this.stmt.setInt(1, folderId);
+        this.stmt.setInt(2, accountId);
+        int affectedRows = this.stmt.executeUpdate();
+        if (affectedRows == 0) {
+            throw new ObjectNotFoundException();
+        }
+    }
+    
     public int addAccountDataItem(int accountId, int userId, String accountMetadata, String password, String encryptedAesKey) throws SQLException {
         this.stmt = this.connection.prepareStatement(""
                 + "INSERT INTO account_data "
@@ -183,6 +193,12 @@ public class Database implements AutoCloseable {
         if (affectedRows == 0) {
             throw new ObjectNotFoundException();
         }
+    }
+    
+    public void deleteAccountData(int accountId) throws SQLException {
+        this.stmt = this.connection.prepareStatement("DELETE FROM account_data WHERE account_id=?");
+        this.stmt.setInt(1, accountId);
+        this.stmt.executeUpdate();
     }
     
     public void deleteFolder(int folderId) throws SQLException, ObjectNotFoundException {
@@ -216,6 +232,10 @@ public class Database implements AutoCloseable {
     private int idFromRS(ResultSet rs) throws SQLException {
         List<DynaBean> rows = this.listFromRS(rs);
         return (int)rows.get(0).get("id");
+    }
+    
+    public Connection getConnection() {
+        return this.connection;
     }
     
     public void close() {

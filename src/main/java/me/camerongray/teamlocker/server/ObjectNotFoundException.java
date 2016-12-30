@@ -10,5 +10,5 @@ package me.camerongray.teamlocker.server;
  * @author camerong
  */
 public class ObjectNotFoundException extends Exception {
-    
+
 }
