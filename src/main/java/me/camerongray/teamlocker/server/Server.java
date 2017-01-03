@@ -20,6 +20,7 @@ import java.util.logging.Logger;
 import org.apache.commons.beanutils.DynaBean;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.mindrot.jbcrypt.BCrypt;
 import static spark.Spark.*;
 
 /**
@@ -139,6 +140,33 @@ public class Server {
             }
             
             return ResponseBuilder.build(response, ResponseBuilder.objectOf("users", ResponseBuilder.fromArrayList(userObjects)));
+        });
+        
+        put("/users/", (request, response) -> {
+            JSONObject requestJson = null;
+            try {
+                requestJson = RequestJson.getValidated(request, "putUsers");
+            } catch (JSONValidationException ex) {
+                // TODO: Friendly error messages for JSONValidationExceptions rather than raw output from validation library
+                ResponseBuilder.errorHalt(response, 400, ex.getMessage());
+            }
+            
+            int userId = -1;
+            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+                userId = database.addUser(
+                        requestJson.getString("full_name"),
+                        requestJson.getString("username"),
+                        requestJson.getString("email"),
+                        BCrypt.hashpw(requestJson.getString("auth_key"), BCrypt.gensalt()),
+                        requestJson.getString("encrypted_private_key"),
+                        requestJson.getString("public_key"),
+                        requestJson.getBoolean("admin"),
+                        requestJson.getString("pbkdf2_salt"),
+                        requestJson.getString("aes_iv")
+                );
+            }
+            
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf("user_id", userId));
         });
         
         get("/folders/", (request, response) -> {

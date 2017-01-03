@@ -1,0 +1,16 @@
+{
+    "type": "object",
+    "properties": {
+        "full_name": {"type": "string"},
+        "username": {"type": "string"},
+        "email": {"type": "string"},
+        "public_key": {"type": "string"},
+        "admin": {"type": "boolean"},
+        "encrypted_private_key": {"type": "string"},
+        "aes_iv": {"type": "string"},
+        "pbkdf2_salt": {"type": "string"},
+        "auth_key": {"type": "string"}
+    },
+    "required": ["full_name", "username", "email", "public_key", "admin",
+        "encrypted_private_key", "aes_iv", "pbkdf2_salt", "auth_key"]
+}
