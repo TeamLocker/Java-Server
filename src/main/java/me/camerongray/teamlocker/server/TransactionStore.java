@@ -29,7 +29,15 @@ public class TransactionStore {
         return transaction;
     }
     
-    public static Transaction getTransaction(String transactionId) {
-        return instance.transactionMap.get(transactionId);
+    public static Transaction getTransaction(String transactionId) throws ObjectNotFoundException {
+        Transaction transaction = instance.transactionMap.get(transactionId);
+        if (transaction == null) {
+            throw new ObjectNotFoundException();
+        }
+        return transaction;
+    }
+    
+    public static void forgetTransaction(String transactionId) {
+        instance.transactionMap.remove(transactionId);
     }
 }

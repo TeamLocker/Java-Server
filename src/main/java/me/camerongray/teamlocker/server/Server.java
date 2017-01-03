@@ -641,6 +641,42 @@ public class Server {
             )));    
         });
         
+        put("/transaction/", (request, response) -> {
+            Transaction transaction = TransactionStore.getTransaction();
+            
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf("transaction_id", transaction.getId()));
+        });
+        
+        post("/transaction/:transactionId/commit/", (request, response) -> {
+            String transactionId = request.params(":transactionId");
+            
+            try {
+                Transaction transaction = TransactionStore.getTransaction(transactionId);
+                transaction.commit();
+                transaction.getConnection().close();
+                TransactionStore.forgetTransaction(transactionId);
+            } catch (ObjectNotFoundException ex) {
+                ResponseBuilder.errorHalt(response, 404, "Transaction not found!");
+            }
+            
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf("success", true));
+        });
+        
+        post("/transaction/:transactionId/rollback/", (request, response) -> {
+            String transactionId = request.params(":transactionId");
+            
+            try {
+                Transaction transaction = TransactionStore.getTransaction(transactionId);
+                transaction.rollback();
+                transaction.getConnection().close();
+                TransactionStore.forgetTransaction(transactionId);
+            } catch (ObjectNotFoundException ex) {
+                ResponseBuilder.errorHalt(response, 404, "Transaction not found!");
+            }
+            
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf("success", true));
+        });
+        
         exception(Exception.class, (e, request, response) -> {
             System.out.println("An unhandled exception occurred!");
             System.out.println(e.toString());
