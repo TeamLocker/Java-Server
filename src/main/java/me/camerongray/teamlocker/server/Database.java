@@ -71,6 +71,22 @@ public class Database implements AutoCloseable {
         return this.idFromRS(this.rs);
     }
     
+    public void updateUserPassword(int userId, String encryptedPrivateKey, String aesIv, String pbkdf2Salt, String authHash) throws SQLException, ObjectNotFoundException {
+        this.stmt = this.connection.prepareStatement(""
+                + "UPDATE users "
+                + "SET (encrypted_private_key, aes_iv, pbkdf2_salt, auth_hash) = (?, ?, ?, ?) "
+                + "WHERE id=?");
+        this.stmt.setString(1, encryptedPrivateKey);
+        this.stmt.setString(2, aesIv);
+        this.stmt.setString(3, pbkdf2Salt);
+        this.stmt.setString(4, authHash);
+        this.stmt.setInt(5, userId);
+        int affectedRows = this.stmt.executeUpdate();
+        if (affectedRows == 0) {
+            throw new ObjectNotFoundException();
+        }
+    }
+    
     public DynaBean getFolder(int folderId) throws SQLException, ObjectNotFoundException {
         this.stmt = this.connection.prepareStatement("SELECT * FROM folders WHERE id=?");
         this.stmt.setInt(1, folderId);

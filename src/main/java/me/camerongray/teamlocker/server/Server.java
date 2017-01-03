@@ -238,6 +238,33 @@ public class Server {
             return ResponseBuilder.build(response, ResponseBuilder.objectOf("success", true));
         });
         
+        // TODO - Replace with generic update user method
+        post("/users/self/update_password/", (request, response) -> {
+            JSONObject requestJson = null;
+            try {
+                requestJson = RequestJson.getValidated(request, "postUsersUpdatePassword");
+            } catch (JSONValidationException ex) {
+                // TODO: Friendly error messages for JSONValidationExceptions rather than raw output from validation library
+                ResponseBuilder.errorHalt(response, 400, ex.getMessage());
+            }
+            
+            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+                try {
+                    database.updateUserPassword(
+                            Auth.getCurrentUserId(request),
+                            requestJson.getString("encrypted_private_key"),
+                            requestJson.getString("aes_iv"),
+                            requestJson.getString("pbkdf2_salt"),
+                            BCrypt.hashpw(requestJson.getString("auth_key"), BCrypt.gensalt())
+                    );
+                } catch (ObjectNotFoundException ex) {
+                    ResponseBuilder.errorHalt(response, 404, "User not found");
+                }
+            }
+            
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf("success", true));
+        });
+        
         delete("/folders/:folderId/", (request, response) -> {
             int folderId = -1;
             try {
