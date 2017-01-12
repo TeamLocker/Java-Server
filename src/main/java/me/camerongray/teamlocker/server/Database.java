@@ -24,9 +24,11 @@ public class Database implements AutoCloseable {
     private Connection connection;
     private PreparedStatement stmt;
     private ResultSet rs;
+    private boolean autoClose;
 
-    public Database(Connection connection) {
-        this.connection = connection;
+    public Database(WrappedConnection connectionWrapper) {
+        this.connection = connectionWrapper.getConnection();
+        this.autoClose = connectionWrapper.isAutoClose();
     }
     
     public DynaBean getUser(String username) throws SQLException, ObjectNotFoundException {
@@ -325,10 +327,12 @@ public class Database implements AutoCloseable {
             Logger.getLogger(Database.class.getName()).log(Level.FINE, "Unable to close PreparedStatement", ex);
         }
         
-        try {
-            this.connection.close();
-        } catch (Exception ex) {
-            Logger.getLogger(Database.class.getName()).log(Level.FINE, "Unable to close Connection", ex);
+        if (this.autoClose) {
+            try {
+                this.connection.close();
+            } catch (Exception ex) {
+                Logger.getLogger(Database.class.getName()).log(Level.FINE, "Unable to close Connection", ex);
+            }
         }
     }
 }

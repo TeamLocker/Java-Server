@@ -24,7 +24,7 @@ public class TransactionStore {
     }
     
     public static Transaction getTransaction() throws SQLException {
-        Transaction transaction = new Transaction(ConnectionManager.getNewConnection());
+        Transaction transaction = new Transaction(ConnectionManager.getNewConnection().getConnection());
         instance.transactionMap.put(transaction.getId(), transaction);
         return transaction;
     }

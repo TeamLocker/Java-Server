@@ -46,20 +46,22 @@ public class ConnectionManager {
         instance.cpds.setPassword(dbPassword);
     }
     
-    public static Connection getPooledConnection() throws SQLException {
-        return instance.cpds.getConnection();
+    public static WrappedConnection getPooledConnection() throws SQLException {
+        Connection connection = instance.cpds.getConnection();
+        return new WrappedConnection(connection, true);
     }
     
-    public static Connection getNewConnection() throws SQLException {
-        return DriverManager.getConnection(instance.jdbcUrl, instance.dbUser, instance.dbPassword);
+    public static WrappedConnection getNewConnection() throws SQLException {
+        Connection connection = DriverManager.getConnection(instance.jdbcUrl, instance.dbUser, instance.dbPassword);
+        return new WrappedConnection(connection, true);
     }
     
-    public static Connection getConnection(Request request) throws SQLException, ObjectNotFoundException {
+    public static WrappedConnection getConnection(Request request) throws SQLException, ObjectNotFoundException {
         String transactionId = request.queryParams("transaction_id");
         if (transactionId == null) {
             return ConnectionManager.getPooledConnection();
         } else {
-            return TransactionStore.getTransaction(transactionId).getConnection();
+            return TransactionStore.getTransaction(transactionId).getWrappedConnection();
         }
     }
 }

@@ -585,7 +585,7 @@ public class Server {
             Auth.enforceFolderPermission(request, response, requestJson.getInt("folder_id"), Auth.PERMISSION_WRITE);
             
             int accountId = -1;
-            Connection connection = ConnectionManager.getConnection(request);
+            WrappedConnection connection = ConnectionManager.getConnection(request);
             try (Database database = new Database(connection)) {
                 try {
                     database.getFolder(requestJson.getInt("folder_id"));
@@ -653,7 +653,7 @@ public class Server {
             try {
                 Transaction transaction = TransactionStore.getTransaction(transactionId);
                 transaction.commit();
-                transaction.getConnection().close();
+                transaction.getWrappedConnection().getConnection().close();
                 TransactionStore.forgetTransaction(transactionId);
             } catch (ObjectNotFoundException ex) {
                 ResponseBuilder.errorHalt(response, 404, "Transaction not found!");
@@ -668,7 +668,7 @@ public class Server {
             try {
                 Transaction transaction = TransactionStore.getTransaction(transactionId);
                 transaction.rollback();
-                transaction.getConnection().close();
+                transaction.getWrappedConnection().getConnection().close();
                 TransactionStore.forgetTransaction(transactionId);
             } catch (ObjectNotFoundException ex) {
                 ResponseBuilder.errorHalt(response, 404, "Transaction not found!");

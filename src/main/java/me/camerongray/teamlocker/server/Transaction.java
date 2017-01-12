@@ -23,9 +23,13 @@ public class Transaction {
         this.connection = connection;
         this.connection.createStatement().execute("START TRANSACTION");
     }
+    
+    public Transaction(WrappedConnection connectionWrapper) throws SQLException {
+        this(connectionWrapper.getConnection());
+    }
 
-    public Connection getConnection() {
-        return connection;
+    public WrappedConnection getWrappedConnection() {
+        return new WrappedConnection(this.connection, false);
     }
     
     public void commit() throws SQLException {
