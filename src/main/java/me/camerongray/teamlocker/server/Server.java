@@ -57,7 +57,7 @@ public class Server {
                 
         get("/users/:userId/", (request, response) -> {
             DynaBean user = null;
-            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+            try (Database database = new Database(ConnectionManager.getConnection(request))) {
                 if (request.params(":userId").equals("self")) {
                     try {
                         user = database.getUser((new RequestCredentials(request)).getUsername());
@@ -101,7 +101,7 @@ public class Server {
             }
             
             List<DynaBean> accountData;
-            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+            try (Database database = new Database(ConnectionManager.getConnection(request))) {
                 accountData = database.getUserAccountData(userId);
             }
             
@@ -120,7 +120,7 @@ public class Server {
         get("/users/", (request, response) -> {
             Auth.enforceAdmin(request, response);
             ArrayList<JSONObject> userObjects = new ArrayList<>();
-            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+            try (Database database = new Database(ConnectionManager.getConnection(request))) {
                 List<DynaBean> users = database.getAllUsers();
                 
                 for (DynaBean user : users) {
@@ -152,7 +152,7 @@ public class Server {
             }
             
             int userId = -1;
-            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+            try (Database database = new Database(ConnectionManager.getConnection(request))) {
                 userId = database.addUser(
                         requestJson.getString("full_name"),
                         requestJson.getString("username"),
@@ -171,7 +171,7 @@ public class Server {
         
         get("/folders/", (request, response) -> {
             ArrayList<JSONObject> folderObjects = new ArrayList<>();
-            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+            try (Database database = new Database(ConnectionManager.getConnection(request))) {
                 List<DynaBean> folders = database.getFolders((int)Auth.getCurrentUser(request).get("id"));
                 for (DynaBean folder : folders) {
                     folderObjects.add(ResponseBuilder.objectOf(
@@ -197,7 +197,7 @@ public class Server {
             Auth.enforceAdmin(request, response);
             
             int folderId = -1;
-            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+            try (Database database = new Database(ConnectionManager.getConnection(request))) {
                 try {
                     database.getFolder(requestJson.getString("name"));
                     ResponseBuilder.errorHalt(response, 409, "A folder with that name already exists");
@@ -228,7 +228,7 @@ public class Server {
                 ResponseBuilder.errorHalt(response, 400, ex.getMessage());
             }
             
-            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+            try (Database database = new Database(ConnectionManager.getConnection(request))) {
                 try {
                     database.updateFolder(folderId, requestJson.getString("name"));
                 } catch (ObjectNotFoundException ex) {
@@ -248,7 +248,7 @@ public class Server {
                 ResponseBuilder.errorHalt(response, 400, ex.getMessage());
             }
             
-            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+            try (Database database = new Database(ConnectionManager.getConnection(request))) {
                 try {
                     database.updateUserPassword(
                             Auth.getCurrentUserId(request),
@@ -274,7 +274,7 @@ public class Server {
             }
             Auth.enforceFolderPermission(request, response, folderId, Auth.PERMISSION_WRITE);
             
-            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+            try (Database database = new Database(ConnectionManager.getConnection(request))) {
                 try {
                     database.deleteFolder(folderId);
                 } catch (ObjectNotFoundException ex) {
@@ -294,7 +294,7 @@ public class Server {
             Auth.enforceFolderPermission(request, response, folderId, Auth.PERMISSION_READ);
             
             ArrayList<JSONObject> accountObjects = new ArrayList<>();
-            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+            try (Database database = new Database(ConnectionManager.getConnection(request))) {
                 List<DynaBean> accounts = new ArrayList<>();
                 accounts = database.getFolderAccounts(folderId, Auth.getCurrentUserId(request));
                 
@@ -314,7 +314,7 @@ public class Server {
             Auth.enforceAdmin(request, response);
 
             List<DynaBean> permissions = new ArrayList<>();
-            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+            try (Database database = new Database(ConnectionManager.getConnection(request))) {
                 try {
                     permissions = database.getFolderPermissions(Integer.parseInt(request.params(":folderId")));
                 } catch (NumberFormatException ex) {
@@ -345,7 +345,7 @@ public class Server {
             
             JSONObject requestJson = RequestJson.getValidated(request, "postFoldersPermissions");
             
-            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+            try (Database database = new Database(ConnectionManager.getConnection(request))) {
                 try {
                     database.getFolder(folderId);
                 } catch (ObjectNotFoundException ex) {
@@ -411,7 +411,7 @@ public class Server {
             Auth.enforceFolderPermission(request, response, folderId, Auth.PERMISSION_WRITE);
 
             List<DynaBean> users;
-            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+            try (Database database = new Database(ConnectionManager.getConnection(request))) {
                 users = database.getFolderUsers(folderId);
             }
             
@@ -436,7 +436,7 @@ public class Server {
             Auth.enforceAccountPermission(request, response, accountId, Auth.PERMISSION_READ);
             
             DynaBean account = null;
-            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+            try (Database database = new Database(ConnectionManager.getConnection(request))) {
                 try {
                     account = database.getAccountData(accountId, Auth.getCurrentUserId(request));
                 } catch (ObjectNotFoundException ex) {
@@ -458,7 +458,7 @@ public class Server {
             }
             Auth.enforceAccountPermission(request, response, accountId, Auth.PERMISSION_WRITE);
             
-            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+            try (Database database = new Database(ConnectionManager.getConnection(request))) {
                 try {
                     database.deleteAccount(accountId);
                 } catch (ObjectNotFoundException ex) {
@@ -486,7 +486,7 @@ public class Server {
             
             Auth.enforceAccountPermission(request, response, accountId, Auth.PERMISSION_WRITE);
             
-            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+            try (Database database = new Database(ConnectionManager.getConnection(request))) {
                 try {
                     database.getAccount(accountId);
                 } catch(ObjectNotFoundException ex) {
@@ -533,7 +533,7 @@ public class Server {
             JSONObject requestJson = RequestJson.getValidated(request, "postAccountsBatch");
             JSONArray accounts = requestJson.getJSONArray("accounts");
 
-            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+            try (Database database = new Database(ConnectionManager.getConnection(request))) {
                 Transaction transaction = new Transaction(database.getConnection());
                 try {
                     for (int i = 0; i < accounts.length(); i++) {
@@ -585,7 +585,7 @@ public class Server {
             Auth.enforceFolderPermission(request, response, requestJson.getInt("folder_id"), Auth.PERMISSION_WRITE);
             
             int accountId = -1;
-            Connection connection = ConnectionManager.getPooledConnection();
+            Connection connection = ConnectionManager.getConnection(request);
             try (Database database = new Database(connection)) {
                 try {
                     database.getFolder(requestJson.getInt("folder_id"));
@@ -628,7 +628,7 @@ public class Server {
             Auth.enforceAccountPermission(request, response, accountId, Auth.PERMISSION_READ);
             
             DynaBean account = null;
-            try (Database database = new Database(ConnectionManager.getPooledConnection())) {
+            try (Database database = new Database(ConnectionManager.getConnection(request))) {
                 try {
                     account = database.getAccountData(accountId, Auth.getCurrentUserId(request));
                 } catch (ObjectNotFoundException ex) {
@@ -675,6 +675,14 @@ public class Server {
             }
             
             return ResponseBuilder.build(response, ResponseBuilder.objectOf("success", true));
+        });
+        
+        get("/transaction_test/", (request, response) -> {
+            Transaction transaction = TransactionStore.getTransaction();
+            
+            
+            
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf("transaction_id", transaction.getId()));
         });
         
         exception(Exception.class, (e, request, response) -> {

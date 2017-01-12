@@ -11,6 +11,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.DriverManager;
 import java.text.MessageFormat;
+import spark.Request;
 
 /**
  *
@@ -51,5 +52,14 @@ public class ConnectionManager {
     
     public static Connection getNewConnection() throws SQLException {
         return DriverManager.getConnection(instance.jdbcUrl, instance.dbUser, instance.dbPassword);
+    }
+    
+    public static Connection getConnection(Request request) throws SQLException, ObjectNotFoundException {
+        String transactionId = request.queryParams("transaction_id");
+        if (transactionId == null) {
+            return ConnectionManager.getPooledConnection();
+        } else {
+            return TransactionStore.getTransaction(transactionId).getConnection();
+        }
     }
 }
