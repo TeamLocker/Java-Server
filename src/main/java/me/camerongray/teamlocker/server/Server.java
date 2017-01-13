@@ -30,8 +30,6 @@ import static spark.Spark.*;
 public class Server {
     public static void main(String[] args) throws PropertyVetoException, SQLException {
         ConnectionManager.initialise("localhost", "teamlocker", "teamlocker", "teamlocker");
-        TransactionStore.initialise();
-        
         
         before((request, response) -> {
             // Log request
@@ -675,14 +673,6 @@ public class Server {
             }
             
             return ResponseBuilder.build(response, ResponseBuilder.objectOf("success", true));
-        });
-        
-        get("/transaction_test/", (request, response) -> {
-            Transaction transaction = TransactionStore.getTransaction();
-            
-            
-            
-            return ResponseBuilder.build(response, ResponseBuilder.objectOf("transaction_id", transaction.getId()));
         });
         
         exception(Exception.class, (e, request, response) -> {

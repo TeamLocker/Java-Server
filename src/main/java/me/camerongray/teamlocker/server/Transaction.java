@@ -8,6 +8,7 @@ package me.camerongray.teamlocker.server;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -17,15 +18,21 @@ import java.util.UUID;
 public class Transaction {
     private String id;
     private Connection connection;
+    private long lastUsed;
 
     public Transaction(Connection connection) throws SQLException {
         this.id = UUID.randomUUID().toString();
         this.connection = connection;
         this.connection.createStatement().execute("START TRANSACTION");
+        this.updateLastUsed();
     }
     
     public Transaction(WrappedConnection connectionWrapper) throws SQLException {
         this(connectionWrapper.getConnection());
+    }
+    
+    public final void updateLastUsed() {
+        this.lastUsed = Instant.now().getEpochSecond();
     }
 
     public WrappedConnection getWrappedConnection() {
@@ -42,5 +49,9 @@ public class Transaction {
 
     public String getId() {
         return id;
+    }
+
+    public long getLastUsed() {
+        return lastUsed;
     }
 }

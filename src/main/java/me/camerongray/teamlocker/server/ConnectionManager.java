@@ -44,6 +44,7 @@ public class ConnectionManager {
         instance.cpds.setJdbcUrl(instance.jdbcUrl);
         instance.cpds.setUser(dbUser);
         instance.cpds.setPassword(dbPassword);
+        TransactionStore.initialise();
     }
     
     public static WrappedConnection getPooledConnection() throws SQLException {

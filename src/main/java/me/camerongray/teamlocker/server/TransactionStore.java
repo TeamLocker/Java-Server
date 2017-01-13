@@ -6,7 +6,10 @@
 package me.camerongray.teamlocker.server;
 
 import java.sql.SQLException;
+import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -21,6 +24,7 @@ public class TransactionStore {
     
     public static void initialise() {
         instance = new TransactionStore();
+        instance.startStaleTransactionCollector();
     }
     
     public static Transaction getTransaction() throws SQLException {
@@ -31,6 +35,7 @@ public class TransactionStore {
     
     public static Transaction getTransaction(String transactionId) throws ObjectNotFoundException {
         Transaction transaction = instance.transactionMap.get(transactionId);
+        transaction.updateLastUsed();
         if (transaction == null) {
             throw new ObjectNotFoundException();
         }
@@ -39,5 +44,45 @@ public class TransactionStore {
     
     public static void forgetTransaction(String transactionId) {
         instance.transactionMap.remove(transactionId);
+    }
+    
+    public Thread startStaleTransactionCollector() {
+        final int COLLECTION_INTERVAL_MILLIS = 1000;
+        
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                while (true) {
+                    System.out.println("Collector running...");
+                    try {
+                        TransactionStore.rollbackStaleTransactions();
+                        Thread.sleep(COLLECTION_INTERVAL_MILLIS);
+                    } catch (SQLException ex) {
+                        Logger.getLogger(TransactionStore.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(TransactionStore.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            } 
+        });
+        
+        t.start();
+        
+        return t;
+    }
+    
+    public static void rollbackStaleTransactions() throws SQLException {
+        final int MAX_AGE_SECONDS = 20;
+        
+        long currentTime;
+        for (Transaction transaction : instance.transactionMap.values()) {
+            currentTime = Instant.now().getEpochSecond();
+            System.out.println(transaction.getId() + " - " + (currentTime - transaction.getLastUsed()));
+            if (currentTime - transaction.getLastUsed() > MAX_AGE_SECONDS) {
+                System.out.println("Rolling back stale transaction - " + transaction.getId());
+                transaction.rollback();
+                transaction.getWrappedConnection().getConnection().close();
+                TransactionStore.forgetTransaction(transaction.getId());
+            }
+        }
     }
 }
