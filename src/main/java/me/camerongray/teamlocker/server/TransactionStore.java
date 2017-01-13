@@ -52,7 +52,6 @@ public class TransactionStore {
         Thread t = new Thread(new Runnable() {
             public void run() {
                 while (true) {
-                    System.out.println("Collector running...");
                     try {
                         TransactionStore.rollbackStaleTransactions();
                         Thread.sleep(COLLECTION_INTERVAL_MILLIS);
@@ -76,7 +75,6 @@ public class TransactionStore {
         long currentTime;
         for (Transaction transaction : instance.transactionMap.values()) {
             currentTime = Instant.now().getEpochSecond();
-            System.out.println(transaction.getId() + " - " + (currentTime - transaction.getLastUsed()));
             if (currentTime - transaction.getLastUsed() > MAX_AGE_SECONDS) {
                 System.out.println("Rolling back stale transaction - " + transaction.getId());
                 transaction.rollback();
