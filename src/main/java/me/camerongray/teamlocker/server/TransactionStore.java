@@ -28,17 +28,23 @@ public class TransactionStore {
     }
     
     public static Transaction getTransaction() throws SQLException {
-        Transaction transaction = new Transaction(ConnectionManager.getNewConnection().getConnection());
+        Transaction transaction = null;
+        try {
+            transaction = new Transaction(ConnectionManager.getNewConnection());
+        } catch (ExistingOpenTransactionException ex) {
+            // This will never happen since we are always feeding it a new connection
+            Logger.getLogger(TransactionStore.class.getName()).log(Level.SEVERE, null, ex);
+        }
         instance.transactionMap.put(transaction.getId(), transaction);
         return transaction;
     }
     
-    public static Transaction getTransaction(String transactionId) throws ObjectNotFoundException {
+    public static Transaction getTransaction(String transactionId) throws TransactionNotFoundException {
         Transaction transaction = instance.transactionMap.get(transactionId);
-        transaction.updateLastUsed();
         if (transaction == null) {
-            throw new ObjectNotFoundException();
+            throw new TransactionNotFoundException();
         }
+        transaction.updateLastUsed();
         return transaction;
     }
     

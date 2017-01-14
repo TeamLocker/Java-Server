@@ -10,39 +10,43 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
  * @author camerong
  */
-public class Transaction {
+public class Transaction implements TransactionInterface {
     private String id;
     private Connection connection;
     private long lastUsed;
-
-    public Transaction(Connection connection) throws SQLException {
+    
+    public Transaction(WrappedConnection connectionWrapper) throws SQLException, ExistingOpenTransactionException {
+        if (connectionWrapper.hasOpenTransaction()) {
+            throw new ExistingOpenTransactionException();
+        }
         this.id = UUID.randomUUID().toString();
-        this.connection = connection;
+        this.connection = connectionWrapper.getConnection();
         this.connection.createStatement().execute("START TRANSACTION");
         this.updateLastUsed();
     }
     
-    public Transaction(WrappedConnection connectionWrapper) throws SQLException {
-        this(connectionWrapper.getConnection());
-    }
-    
+    @Override
     public final void updateLastUsed() {
         this.lastUsed = Instant.now().getEpochSecond();
     }
 
     public WrappedConnection getWrappedConnection() {
-        return new WrappedConnection(this.connection, false);
+        return new WrappedConnection(this.connection, true);
     }
     
+    @Override
     public void commit() throws SQLException {
         this.connection.createStatement().execute("COMMIT");
     }
     
+    @Override
     public void rollback() throws SQLException {
         this.connection.createStatement().execute("ROLLBACK");
     }

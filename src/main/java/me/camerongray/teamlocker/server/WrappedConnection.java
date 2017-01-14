@@ -13,18 +13,18 @@ import java.sql.Connection;
  */
 public class WrappedConnection {
     private Connection connection;
-    private boolean autoClose;
+    private boolean hasOpenTransaction;
 
-    public WrappedConnection(Connection connection, boolean autoClose) {
+    public WrappedConnection(Connection connection, boolean hasOpenTransaction) {
         this.connection = connection;
-        this.autoClose = autoClose;
+        this.hasOpenTransaction = hasOpenTransaction;
     }
 
     public Connection getConnection() {
         return connection;
     }
 
-    public boolean isAutoClose() {
-        return autoClose;
+    public boolean hasOpenTransaction() {
+        return hasOpenTransaction;
     }
 }

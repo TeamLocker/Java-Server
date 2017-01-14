@@ -25,10 +25,12 @@ public class Database implements AutoCloseable {
     private PreparedStatement stmt;
     private ResultSet rs;
     private boolean autoClose;
+    private WrappedConnection wrappedConnection;
 
-    public Database(WrappedConnection connectionWrapper) {
-        this.connection = connectionWrapper.getConnection();
-        this.autoClose = connectionWrapper.isAutoClose();
+    public Database(WrappedConnection wrappedConnection) {
+        this.connection = wrappedConnection.getConnection();
+        this.autoClose = !wrappedConnection.hasOpenTransaction();
+        this.wrappedConnection = wrappedConnection;
     }
     
     public DynaBean getUser(String username) throws SQLException, ObjectNotFoundException {
@@ -310,8 +312,8 @@ public class Database implements AutoCloseable {
         return (int)rows.get(0).get("id");
     }
     
-    public Connection getConnection() {
-        return this.connection;
+    public WrappedConnection getWrappedConnection() {
+        return this.wrappedConnection;
     }
     
     public void close() {

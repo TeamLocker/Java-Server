@@ -49,15 +49,15 @@ public class ConnectionManager {
     
     public static WrappedConnection getPooledConnection() throws SQLException {
         Connection connection = instance.cpds.getConnection();
-        return new WrappedConnection(connection, true);
+        return new WrappedConnection(connection, false);
     }
     
     public static WrappedConnection getNewConnection() throws SQLException {
         Connection connection = DriverManager.getConnection(instance.jdbcUrl, instance.dbUser, instance.dbPassword);
-        return new WrappedConnection(connection, true);
+        return new WrappedConnection(connection, false);
     }
     
-    public static WrappedConnection getConnection(Request request) throws SQLException, ObjectNotFoundException {
+    public static WrappedConnection getConnection(Request request) throws SQLException, TransactionNotFoundException {
         String transactionId = request.queryParams("transaction_id");
         if (transactionId == null) {
             return ConnectionManager.getPooledConnection();

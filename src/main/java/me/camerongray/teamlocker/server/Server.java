@@ -349,7 +349,7 @@ public class Server {
                 } catch (ObjectNotFoundException ex) {
                     ResponseBuilder.errorHalt(response, 404, "Folder not found!");
                 }
-                Transaction transaction = new Transaction(database.getConnection());
+                Transaction transaction = new Transaction(database.getWrappedConnection());
                 
                 try {
                     database.deleteFolderPermissions(folderId);
@@ -496,7 +496,7 @@ public class Server {
                     ResponseBuilder.errorHalt(response, 404, "Folder not found");
                 }
                 
-                Transaction transaction = new Transaction(database.getConnection());
+                Transaction transaction = new Transaction(database.getWrappedConnection());
                 try {
                     database.updateAccount(accountId, requestJson.getInt("folder_id"));
 
@@ -532,7 +532,7 @@ public class Server {
             JSONArray accounts = requestJson.getJSONArray("accounts");
 
             try (Database database = new Database(ConnectionManager.getConnection(request))) {
-                Transaction transaction = new Transaction(database.getConnection());
+                Transaction transaction = new Transaction(database.getWrappedConnection());
                 try {
                     for (int i = 0; i < accounts.length(); i++) {
                         JSONObject account = accounts.getJSONObject(i);
@@ -590,7 +590,14 @@ public class Server {
                 } catch(ObjectNotFoundException ex) {
                     ResponseBuilder.errorHalt(response, 404, "Folder not found");
                 }
-                Transaction transaction = new Transaction(connection);
+                
+                TransactionInterface transaction;
+                try {
+                    transaction = new Transaction(connection);
+                } catch (ExistingOpenTransactionException ex) {
+                    transaction = new NullTransaction();
+                    Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+                }
                 
                 try {
                     accountId = database.addAccount(requestJson.getInt("folder_id"));
@@ -653,7 +660,7 @@ public class Server {
                 transaction.commit();
                 transaction.getWrappedConnection().getConnection().close();
                 TransactionStore.forgetTransaction(transactionId);
-            } catch (ObjectNotFoundException ex) {
+            } catch (TransactionNotFoundException ex) {
                 ResponseBuilder.errorHalt(response, 404, "Transaction not found!");
             }
             
@@ -668,7 +675,7 @@ public class Server {
                 transaction.rollback();
                 transaction.getWrappedConnection().getConnection().close();
                 TransactionStore.forgetTransaction(transactionId);
-            } catch (ObjectNotFoundException ex) {
+            } catch (TransactionNotFoundException ex) {
                 ResponseBuilder.errorHalt(response, 404, "Transaction not found!");
             }
             
@@ -676,15 +683,24 @@ public class Server {
         });
         
         exception(Exception.class, (e, request, response) -> {
-            System.out.println("An unhandled exception occurred!");
-            System.out.println(e.toString());
-            e.printStackTrace();
-            response.status(500);
-            response.type("application/json");
-            response.body(ResponseBuilder.objectOf(
-                "error", true,
-                "message", "An unhandled server error occurred! - " + e.toString()
-            ).toString());
+            if (e.getClass().equals(TransactionNotFoundException.class)) {
+                response.status(404);
+                response.body(ResponseBuilder.objectOf(
+                    "error", true,
+                    "message", "Transaction not found",
+                    "type", "transaction_not_found"
+                ).toString());
+            } else {
+                System.out.println("An unhandled exception occurred!");
+                System.out.println(e.toString());
+                e.printStackTrace();
+                response.status(500);
+                response.type("application/json");
+                response.body(ResponseBuilder.objectOf(
+                    "error", true,
+                    "message", "An unhandled server error occurred! - " + e.toString()
+                ).toString());
+            }
         });
         
         //TODO - Disable this in production!
