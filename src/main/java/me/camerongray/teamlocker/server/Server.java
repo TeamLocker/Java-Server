@@ -349,7 +349,12 @@ public class Server {
                 } catch (ObjectNotFoundException ex) {
                     ResponseBuilder.errorHalt(response, 404, "Folder not found!");
                 }
-                Transaction transaction = new Transaction(database.getWrappedConnection());
+                TransactionInterface transaction;
+                try {
+                    transaction = new Transaction(database.getWrappedConnection());
+                } catch (ExistingOpenTransactionException ex) {
+                    transaction = new NullTransaction();
+                }
                 
                 try {
                     database.deleteFolderPermissions(folderId);
@@ -495,8 +500,12 @@ public class Server {
                 } catch(ObjectNotFoundException ex) {
                     ResponseBuilder.errorHalt(response, 404, "Folder not found");
                 }
-                
-                Transaction transaction = new Transaction(database.getWrappedConnection());
+                TransactionInterface transaction;
+                try {
+                    transaction = new Transaction(database.getWrappedConnection());
+                } catch (ExistingOpenTransactionException ex) {
+                    transaction = new NullTransaction();
+                }
                 try {
                     database.updateAccount(accountId, requestJson.getInt("folder_id"));
 
@@ -532,7 +541,12 @@ public class Server {
             JSONArray accounts = requestJson.getJSONArray("accounts");
 
             try (Database database = new Database(ConnectionManager.getConnection(request))) {
-                Transaction transaction = new Transaction(database.getWrappedConnection());
+                TransactionInterface transaction;
+                try {
+                    transaction = new Transaction(database.getWrappedConnection());
+                } catch (ExistingOpenTransactionException ex) {
+                    transaction = new NullTransaction();
+                }
                 try {
                     for (int i = 0; i < accounts.length(); i++) {
                         JSONObject account = accounts.getJSONObject(i);
