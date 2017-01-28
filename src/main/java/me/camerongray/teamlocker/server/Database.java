@@ -53,6 +53,13 @@ public class Database implements AutoCloseable {
         return this.listFromRS(rs);
     }
     
+    public List<DynaBean> getUserPermissions(int userId) throws SQLException {
+        this.stmt = this.connection.prepareStatement("SELECT * FROM permissions WHERE user_id=?");
+        this.stmt.setInt(1, userId);
+        this.rs = this.stmt.executeQuery();
+        return this.listFromRS(rs);
+    }    
+    
     public int addUser(String fullName, String username, String email, String authHash,
             String encryptedPrivateKey, String publicKey, boolean admin, String pbkdf2Salt, String aesIv) throws SQLException {
         

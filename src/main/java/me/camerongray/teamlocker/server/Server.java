@@ -115,6 +115,30 @@ public class Server {
                     "encrypted_aes_keys", ResponseBuilder.fromArrayList(aesKeyObjects)));
         });
         
+        get("/users/:userId/permissions/", (request, response) -> {
+            Auth.enforceAdmin(request, response);
+
+            List<DynaBean> permissions = new ArrayList<>();
+            try (Database database = new Database(ConnectionManager.getConnection(request))) {
+                try {
+                    permissions = database.getUserPermissions(Integer.parseInt(request.params(":userId")));
+                } catch (NumberFormatException ex) {
+                    ResponseBuilder.errorHalt(response, 400, "User ID must be a number");
+                }
+            }
+            
+            ArrayList<JSONObject> responseObjects = new ArrayList<>();
+            for(DynaBean permission : permissions) {
+                responseObjects.add(ResponseBuilder.objectOf(
+                        "folder_id", (int)permission.get("folder_id"),
+                        "read", (boolean)permission.get("read"),
+                        "write", (boolean)permission.get("write")
+                ));
+            }
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf("permissions",
+                    ResponseBuilder.fromArrayList(responseObjects)));
+        });
+        
         get("/users/", (request, response) -> {
             Auth.enforceAdmin(request, response);
             ArrayList<JSONObject> userObjects = new ArrayList<>();
