@@ -82,6 +82,22 @@ public class Database implements AutoCloseable {
         return this.idFromRS(this.rs);
     }
     
+    public void updateUser(int userId, String username, String fullName, String email, boolean admin) throws SQLException, ObjectNotFoundException {
+        this.stmt = this.connection.prepareStatement(""
+                + "UPDATE users "
+                + "SET (username, full_name, email, admin) = (?, ?, ?, ?) "
+                + "WHERE id=?");
+        this.stmt.setString(1, username);
+        this.stmt.setString(2, fullName);
+        this.stmt.setString(3, email);
+        this.stmt.setBoolean(4, admin);
+        this.stmt.setInt(5, userId);
+        int affectedRows = this.stmt.executeUpdate();
+        if (affectedRows == 0) {
+            throw new ObjectNotFoundException();
+        }
+    }
+    
     public void updateUserPassword(int userId, String encryptedPrivateKey, String aesIv, String pbkdf2Salt, String authHash) throws SQLException, ObjectNotFoundException {
         this.stmt = this.connection.prepareStatement(""
                 + "UPDATE users "

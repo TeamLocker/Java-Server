@@ -139,6 +139,51 @@ public class Server {
                     ResponseBuilder.fromArrayList(responseObjects)));
         });
         
+        post("/users/:userId/", (request, response) -> {
+            Auth.enforceAdmin(request, response);
+            
+            int userId = -1;
+            try {
+                userId = Integer.parseInt(request.params(":userId"));
+            } catch (NumberFormatException ex) {
+                ResponseBuilder.errorHalt(response, 400, "User ID must be a number");
+            }
+            
+            JSONObject requestJson = null;
+            try {
+                requestJson = RequestJson.getValidated(request, "postUsers");
+            } catch (JSONValidationException ex) {
+                // TODO: Friendly error messages for JSONValidationExceptions rather than raw output from validation library
+                ResponseBuilder.errorHalt(response, 400, ex.getMessage());
+            }
+            
+            try (Database database = new Database(ConnectionManager.getConnection(request))) {
+                boolean usernameExists = true;
+                try {
+                    DynaBean user = database.getUser(requestJson.getString("username"));
+                    if ((Integer)user.get("id") == userId) {
+                        usernameExists = false;
+                    }
+                } catch (ObjectNotFoundException ex) {
+                    usernameExists = false;
+                }
+                
+                if (usernameExists) {
+                    ResponseBuilder.errorHalt(response, 409, "A user with that username already exists");
+                }                
+                
+                database.updateUser(
+                        userId,
+                        requestJson.getString("username"),
+                        requestJson.getString("full_name"),
+                        requestJson.getString("email"),
+                        requestJson.getBoolean("admin")
+                );
+            }
+            
+            return ResponseBuilder.build(response, ResponseBuilder.objectOf("success", true));
+        });
+        
         get("/users/", (request, response) -> {
             Auth.enforceAdmin(request, response);
             ArrayList<JSONObject> userObjects = new ArrayList<>();
@@ -175,6 +220,17 @@ public class Server {
             
             int userId = -1;
             try (Database database = new Database(ConnectionManager.getConnection(request))) {
+                boolean userExists = true;
+                try {
+                    database.getUser(requestJson.getString("username"));
+                } catch (ObjectNotFoundException ex) {
+                    userExists = false;
+                }
+                
+                if (userExists) {
+                    ResponseBuilder.errorHalt(response, 409, "A user with that username already exists");
+                }
+                
                 userId = database.addUser(
                         requestJson.getString("full_name"),
                         requestJson.getString("username"),

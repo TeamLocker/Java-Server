@@ -1,0 +1,10 @@
+{
+    "type": "object",
+    "properties": {
+        "full_name": {"type": "string"},
+        "username": {"type": "string"},
+        "email": {"type": "string"},
+        "admin": {"type": "boolean"}
+    },
+    "required": ["full_name", "username", "email", "admin"]
+}
