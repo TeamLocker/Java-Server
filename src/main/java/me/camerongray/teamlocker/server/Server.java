@@ -139,6 +139,20 @@ public class Server {
                     ResponseBuilder.fromArrayList(responseObjects)));
         });
         
+        delete("/users/:userId/permissions/", (request, response) -> {
+           Auth.enforceAdmin(request, response);
+           
+           try (Database database = new Database(ConnectionManager.getConnection(request))) {
+               try {
+                   database.deleteUserPermissions(Integer.parseInt(request.params(":userId")));
+               } catch (NumberFormatException ex) {
+                   ResponseBuilder.errorHalt(response, 400, "User ID must be a number");
+               }
+           }
+           
+           return ResponseBuilder.build(response, ResponseBuilder.objectOf("success", true));
+        });
+        
         post("/users/:userId/", (request, response) -> {
             Auth.enforceAdmin(request, response);
             

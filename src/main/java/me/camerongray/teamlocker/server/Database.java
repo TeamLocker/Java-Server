@@ -114,6 +114,12 @@ public class Database implements AutoCloseable {
         }
     }
     
+    public void deleteUserPermissions(int userId) throws SQLException {
+        this.stmt = this.connection.prepareStatement("DELETE FROM permissions WHERE user_id=?");
+        this.stmt.setInt(1, userId);
+        this.stmt.executeUpdate();
+    }
+    
     public DynaBean getFolder(int folderId) throws SQLException, ObjectNotFoundException {
         this.stmt = this.connection.prepareStatement("SELECT * FROM folders WHERE id=?");
         this.stmt.setInt(1, folderId);
